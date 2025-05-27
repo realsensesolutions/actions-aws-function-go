@@ -76,18 +76,8 @@ resource "random_id" "suffix" {
   byte_length = 4
 }
 
-# Use the pre-built lambda function zip created by the GitHub Action
-data "archive_file" "lambda_package" {
-  type        = "zip"
-  output_path = "${path.module}/lambda_function.zip"
-  
-  # For Go, we use the pre-built zip file created in the GitHub Action
-  source_dir = null
-  source_file = null
-  
-  # This will be overridden by the zip file created in the GitHub Action
-  excludes = []
-}
+# Note: The lambda_function.zip is created by the GitHub Action build step
+# No archive_file data source needed since we build the Go binary externally
 
 # Create the IAM role for the Lambda function
 resource "aws_iam_role" "lambda_role" {
