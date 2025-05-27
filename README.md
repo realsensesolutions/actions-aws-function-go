@@ -15,6 +15,7 @@ This GitHub Action provisions an AWS Lambda function using Go runtime via Terraf
 | arm                 | Run in ARM compute                                                                     | false    | true                                         |
 | worker              | Enable worker mode with SQS queue                                                      | false    | ""                                           |
 | entrypoint-file     | Path to main Go file (e.g., main.go or cmd/main.go)                                   | true     | ""                                           |
+| working-directory   | Working directory containing go.mod and Go source files                               | false    | .                                            |
 | memory              | 128 (in MB) to 10,240 (in MB)                                                          | false    | 128                                          |
 | env                 | List of environment variables in YML format                                            | false    | CREATE\_BY: alonch/actions-aws-function-go |
 | permissions         | List of permissions following Github standard of service: read or write. In YML format | false    | ""                                           |
@@ -57,6 +58,7 @@ jobs:
       - uses: alonch/actions-aws-function-go@main
         with:
           name: actions-aws-function-go-demo
+          working-directory: .
           entrypoint-file: main.go
           allow-public-access: true
 ```
@@ -98,6 +100,7 @@ To create a Lambda function with persistent storage, use the `volume-name` param
 - uses: alonch/actions-aws-function-go@main
   with:
     name: stateful-lambda-function
+    working-directory: .
     entrypoint-file: main.go
     volume-name: db
     timeout: 10 # Note: min 10 seconds when using EFS
@@ -119,6 +122,7 @@ To create a Lambda function with a worker queue, use the `worker` parameter:
   id: worker
   with:
     name: worker-lambda
+    working-directory: .
     entrypoint-file: main.go
     worker: true
 ```
@@ -146,6 +150,7 @@ When you use the network action before this Lambda action, your functions will b
 - uses: alonch/actions-aws-function-go@main
   with:
     name: secure-lambda
+    working-directory: .
     entrypoint-file: main.go
     volume-name: db  # EFS will be created in private subnets
 ```

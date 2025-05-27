@@ -44,7 +44,8 @@ The function includes a router that automatically detects the event type and rou
   uses: your-org/actions-aws-function-go@main
   with:
     name: my-go-function
-    entrypoint-file: examples/main.go
+    working-directory: examples
+    entrypoint-file: main.go
     memory: 256
     timeout: 15
     allow-public-access: true

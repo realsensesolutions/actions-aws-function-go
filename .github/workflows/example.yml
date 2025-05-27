@@ -34,17 +34,18 @@ jobs:
       # Optional: Set up network infrastructure (VPC, subnets, security groups)
       # When this action runs, Lambda functions will be deployed to private subnets
       # If omitted, Lambda functions will use the default VPC (when EFS is enabled)
-      - name: Set up network
-        uses: realsensesolutions/actions-aws-network@main
-        with:
-          action: destroy
+      # - name: Set up network
+      #   uses: realsensesolutions/actions-aws-network@main
+      #   with:
+      #     action: destroy
 
       - name: Deploy Lambda Worker
         id: worker
         uses: ./
         with:
           name: demo-worker
-          entrypoint-file: examples/main.go
+          working-directory: examples
+          entrypoint-file: main.go
           memory: 256
           timeout: 15
           worker: true  # Enable worker mode with SQS queue
@@ -58,7 +59,8 @@ jobs:
         uses: ./
         with:
           name: demo
-          entrypoint-file: examples/main.go
+          working-directory: examples
+          entrypoint-file: main.go
           memory: 256
           timeout: 15
           allow-public-access: true

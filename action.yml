@@ -24,6 +24,10 @@ inputs:
   entrypoint-file:
     description: 'Path to main Go file (e.g., main.go or cmd/main.go)'
     required: true
+  working-directory:
+    description: 'Working directory containing go.mod and Go source files'
+    required: false
+    default: '.'
   memory:
     description: '128 (in MB) to 10,240 (in MB)'
     required: false
@@ -94,9 +98,8 @@ runs:
     # Build Go binary for Lambda
     - name: Build Go Lambda function
       run: |
-        # Navigate to the directory containing the entrypoint file
-        ENTRYPOINT_DIR=$(dirname "${{ github.workspace }}/${{ inputs.entrypoint-file }}")
-        cd "$ENTRYPOINT_DIR"
+        # Navigate to the working directory
+        cd "${{ github.workspace }}/${{ inputs.working-directory }}"
         
         # Install dependencies
         go mod tidy
@@ -111,7 +114,7 @@ runs:
         # Build the binary
         export GOOS=linux
         export CGO_ENABLED=0
-        go build -tags lambda.norpc -o bootstrap $(basename "${{ inputs.entrypoint-file }}")
+        go build -tags lambda.norpc -o bootstrap "${{ inputs.entrypoint-file }}"
         
         # Create deployment package with the bootstrap binary
         zip "${{ github.action_path }}/lambda_function.zip" bootstrap
