@@ -15,7 +15,7 @@ This GitHub Action provisions an AWS Lambda function using Go runtime via Terraf
 | arm                 | Run in ARM compute                                                                     | false    | true                                         |
 | worker              | Enable worker mode with SQS queue                                                      | false    | ""                                           |
 | entrypoint-file     | Path to main Go file (e.g., main.go or cmd/main.go)                                   | true     | ""                                           |
-| working-directory   | Working directory containing go.mod and Go source files                               | false    | .                                            |
+| working-directory   | Working directory containing go.mod and Go source files (relative to workspace)       | false    | .                                            |
 | memory              | 128 (in MB) to 10,240 (in MB)                                                          | false    | 128                                          |
 | env                 | List of environment variables in YML format                                            | false    | CREATE\_BY: alonch/actions-aws-function-go |
 | permissions         | List of permissions following Github standard of service: read or write. In YML format | false    | ""                                           |
@@ -175,6 +175,7 @@ You can specify AWS service permissions using the `permissions` parameter:
 - uses: alonch/actions-aws-function-go@main
   with:
     name: lambda-with-permissions
+    working-directory: .
     entrypoint-file: main.go
     permissions: |
       s3: read

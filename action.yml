@@ -25,7 +25,7 @@ inputs:
     description: 'Path to main Go file (e.g., main.go or cmd/main.go)'
     required: true
   working-directory:
-    description: 'Working directory containing go.mod and Go source files'
+    description: 'Working directory containing go.mod and Go source files (relative to workspace)'
     required: false
     default: '.'
   memory:
@@ -114,7 +114,7 @@ runs:
         # Build the binary
         export GOOS=linux
         export CGO_ENABLED=0
-        go build -tags lambda.norpc -o bootstrap "${{ inputs.entrypoint-file }}"
+        go build -tags lambda.norpc -o bootstrap .
         
         # Create deployment package with the bootstrap binary
         zip "${{ github.action_path }}/lambda_function.zip" bootstrap
