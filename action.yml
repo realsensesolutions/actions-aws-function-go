@@ -1,0 +1,237 @@
+name: 'AWS Lambda Go Function'
+description: 'Deploy a Go function to AWS Lambda'
+author: 'alonch'
+branding:
+  icon: 'cloud-lightning'
+  color: 'blue'
+
+inputs:
+  action:
+    description: 'Desired outcome: apply, plan or destroy'
+    required: false
+    default: 'apply'
+  name:
+    description: 'Function name'
+    required: true
+  arm:
+    description: 'Run in ARM compute'
+    required: false
+    default: 'true'
+  worker:
+    description: 'Enable worker mode with SQS queue'
+    required: false
+    default: ''
+  entrypoint-file:
+    description: 'Path to main Go file (e.g., main.go or cmd/main.go)'
+    required: true
+  memory:
+    description: '128 (in MB) to 10,240 (in MB)'
+    required: false
+    default: '128'
+  env:
+    description: 'List of environment variables in YML format'
+    required: false
+    default: 'CREATE_BY: alonch/actions-aws-function-go'
+  permissions:
+    description: 'List of permissions following Github standard of service: read or write. In YML format'
+    required: false
+    default: ''
+  artifacts:
+    description: 'This folder will be zip and deploy to Lambda'
+    required: false
+    default: ''
+  timeout:
+    description: 'Maximum time in seconds before aborting the execution'
+    required: false
+    default: '3'
+  allow-public-access:
+    description: 'Generate a public URL. WARNING: ANYONE ON THE INTERNET CAN RUN THIS FUNCTION'
+    required: false
+    default: ''
+  volume-name:
+    description: 'Name of the EFS volume to create or use. Will be managed by actions-aws-volume'
+    required: false
+    default: ''
+  volume-path:
+    description: 'Path where the EFS volume will be mounted in Lambda (defaults to /mnt/{volume-name})'
+    required: false
+    default: ''
+
+outputs:
+  arn:
+    description: 'ARN of the deployed Lambda function'
+    value: ${{ steps.terraform.outputs.arn }}
+  url:
+    description: 'Public accessible URL, if allow-public-access=true'
+    value: ${{ steps.terraform.outputs.url }}
+  queue-arn:
+    description: 'ARN of the SQS queue (if worker mode is enabled)'
+    value: ${{ steps.terraform.outputs.queue_arn }}
+  queue-name:
+    description: 'Name of the SQS queue (if worker mode is enabled)'
+    value: ${{ steps.terraform.outputs.queue_name }}
+  queue-url:
+    description: 'URL of the SQS queue (if worker mode is enabled)'
+    value: ${{ steps.terraform.outputs.queue_url }}
+
+runs:
+  using: "composite"
+  steps:
+    # Provision EFS volume if volume-name is specified
+    - name: Provision EFS volume
+      id: efs
+      uses: realsensesolutions/actions-aws-volume@main
+      if: inputs.volume-name != ''
+      with:
+        name: ${{ inputs.volume-name }}
+
+    # Set up Go environment
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22'
+
+    # Build Go binary for Lambda
+    - name: Build Go Lambda function
+      run: |
+        # Navigate to the directory containing the entrypoint file
+        ENTRYPOINT_DIR=$(dirname "${{ github.workspace }}/${{ inputs.entrypoint-file }}")
+        cd "$ENTRYPOINT_DIR"
+        
+        # Install dependencies
+        go mod tidy
+        
+        # Set architecture based on ARM setting
+        if [[ "${{ inputs.arm }}" == "true" ]]; then
+          export GOARCH=arm64
+        else
+          export GOARCH=amd64
+        fi
+        
+        # Build the binary
+        export GOOS=linux
+        export CGO_ENABLED=0
+        go build -tags lambda.norpc -o bootstrap $(basename "${{ inputs.entrypoint-file }}")
+        
+        # Create deployment package with the bootstrap binary
+        zip "${{ github.action_path }}/lambda_function.zip" bootstrap
+        
+        # If artifacts directory is specified, add its contents to the package
+        if [[ -n "${{ inputs.artifacts }}" && -d "${{ github.workspace }}/${{ inputs.artifacts }}" ]]; then
+          cd "${{ github.workspace }}/${{ inputs.artifacts }}"
+          zip -ur "${{ github.action_path }}/lambda_function.zip" .
+        fi
+      shell: bash
+
+    - name: Terraform init
+      run: |
+        terraform init -reconfigure \
+          -backend-config="bucket=$TF_BACKEND_s3" \
+          -backend-config="dynamodb_table=$TF_BACKEND_dynamodb" \
+          -backend-config="key=$TF_BACKEND_key"
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      env:
+        TF_BACKEND_key: "actions-aws-function-go/${{ inputs.name }}"
+        TF_VAR_name: ${{ inputs.name }}
+        TF_VAR_arm: ${{ inputs.arm }}
+        TF_VAR_worker: ${{ inputs.worker }}
+        TF_VAR_entrypoint_file: ${{ inputs.entrypoint-file }}
+        TF_VAR_memory: ${{ inputs.memory }}
+        TF_VAR_timeout: ${{ inputs.timeout }}
+        TF_VAR_allow_public_access: ${{ inputs.allow-public-access }}
+        TF_VAR_artifacts: ${{ github.workspace }}/${{ inputs.artifacts }}
+        TF_VAR_env: ${{ inputs.env }}
+        TF_VAR_permissions: ${{ inputs.permissions }}
+        TF_VAR_volume: ${{ inputs.volume-name }}
+        TF_VAR_volume_path: ${{ inputs.volume-path }}
+        TF_VAR_efs_access_point_arn: ${{ steps.efs.outputs.access_point_arn }}
+        TF_VAR_efs_id: ${{ steps.efs.outputs.efs_id }}
+        TF_VAR_efs_arn: ${{ steps.efs.outputs.efs_arn }}
+
+    - name: Terraform plan
+      if: inputs.action == 'plan'
+      run: terraform plan
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      env:
+        TF_VAR_name: ${{ inputs.name }}
+        TF_VAR_arm: ${{ inputs.arm }}
+        TF_VAR_worker: ${{ inputs.worker }}
+        TF_VAR_entrypoint_file: ${{ inputs.entrypoint-file }}
+        TF_VAR_memory: ${{ inputs.memory }}
+        TF_VAR_timeout: ${{ inputs.timeout }}
+        TF_VAR_allow_public_access: ${{ inputs.allow-public-access }}
+        TF_VAR_artifacts: ${{ github.workspace }}/${{ inputs.artifacts }}
+        TF_VAR_env: ${{ inputs.env }}
+        TF_VAR_permissions: ${{ inputs.permissions }}
+        TF_VAR_volume: ${{ inputs.volume-name }}
+        TF_VAR_volume_path: ${{ inputs.volume-path }}
+        TF_VAR_efs_access_point_arn: ${{ steps.efs.outputs.access_point_arn }}
+        TF_VAR_efs_id: ${{ steps.efs.outputs.efs_id }}
+        TF_VAR_efs_arn: ${{ steps.efs.outputs.efs_arn }}
+
+    - name: Terraform destroy
+      if: inputs.action == 'destroy'
+      run: terraform destroy -auto-approve
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      env:
+        TF_VAR_name: ${{ inputs.name }}
+        TF_VAR_arm: ${{ inputs.arm }}
+        TF_VAR_worker: ${{ inputs.worker }}
+        TF_VAR_entrypoint_file: ${{ inputs.entrypoint-file }}
+        TF_VAR_memory: ${{ inputs.memory }}
+        TF_VAR_timeout: ${{ inputs.timeout }}
+        TF_VAR_allow_public_access: ${{ inputs.allow-public-access }}
+        TF_VAR_artifacts: ${{ github.workspace }}/${{ inputs.artifacts }}
+        TF_VAR_env: ${{ inputs.env }}
+        TF_VAR_permissions: ${{ inputs.permissions }}
+        TF_VAR_volume: ${{ inputs.volume-name }}
+        TF_VAR_volume_path: ${{ inputs.volume-path }}
+        TF_VAR_efs_access_point_arn: ${{ steps.efs.outputs.access_point_arn }}
+        TF_VAR_efs_id: ${{ steps.efs.outputs.efs_id }}
+        TF_VAR_efs_arn: ${{ steps.efs.outputs.efs_arn }}
+
+    - name: Terraform apply
+      id: terraform
+      if: inputs.action == 'apply'
+      run: |
+        terraform apply -auto-approve
+        ARN=$(terraform output -raw lambda_arn | tr -d '\r\n')
+        URL=$(terraform output -raw lambda_url | tr -d '\r\n')
+
+        # Get queue outputs if worker mode is enabled
+        QUEUE_ARN=""
+        QUEUE_NAME=""
+        QUEUE_URL=""
+        if [[ "${{ inputs.worker }}" == "true" ]]; then
+          QUEUE_ARN=$(terraform output -raw queue_arn | tr -d '\r\n')
+          QUEUE_NAME=$(terraform output -raw queue_name | tr -d '\r\n')
+          QUEUE_URL=$(terraform output -raw queue_url | tr -d '\r\n')
+        fi
+
+        # Set outputs properly
+        echo "arn=$ARN" >> "$GITHUB_OUTPUT"
+        echo "url=$URL" >> "$GITHUB_OUTPUT"
+        echo "queue_arn=$QUEUE_ARN" >> "$GITHUB_OUTPUT"
+        echo "queue_name=$QUEUE_NAME" >> "$GITHUB_OUTPUT"
+        echo "queue_url=$QUEUE_URL" >> "$GITHUB_OUTPUT"
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      env:
+        TF_VAR_name: ${{ inputs.name }}
+        TF_VAR_arm: ${{ inputs.arm }}
+        TF_VAR_worker: ${{ inputs.worker }}
+        TF_VAR_entrypoint_file: ${{ inputs.entrypoint-file }}
+        TF_VAR_memory: ${{ inputs.memory }}
+        TF_VAR_timeout: ${{ inputs.timeout }}
+        TF_VAR_allow_public_access: ${{ inputs.allow-public-access }}
+        TF_VAR_artifacts: ${{ github.workspace }}/${{ inputs.artifacts }}
+        TF_VAR_env: ${{ inputs.env }}
+        TF_VAR_permissions: ${{ inputs.permissions }}
+        TF_VAR_volume: ${{ inputs.volume-name }}
+        TF_VAR_volume_path: ${{ inputs.volume-path }}
+        TF_VAR_efs_access_point_arn: ${{ steps.efs.outputs.access_point_arn }}
+        TF_VAR_efs_id: ${{ steps.efs.outputs.efs_id }}
+        TF_VAR_efs_arn: ${{ steps.efs.outputs.efs_arn }}

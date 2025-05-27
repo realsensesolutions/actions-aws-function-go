@@ -1,0 +1,75 @@
+name: Deploy Lambda Go Function
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # Required for AWS authentication
+      contents: read   # Required to checkout the repository
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: ${{ github.actor }}
+
+      # Optional: Set up Terraform backend
+      - name: Set up backend
+        uses: alonch/actions-aws-backend-setup@main
+        id: backend
+        with:
+          instance: go-lambda-example
+
+      # Optional: Set up network infrastructure (VPC, subnets, security groups)
+      # When this action runs, Lambda functions will be deployed to private subnets
+      # If omitted, Lambda functions will use the default VPC (when EFS is enabled)
+      - name: Set up network
+        uses: realsensesolutions/actions-aws-network@main
+
+      - name: Deploy Lambda Worker
+        id: worker
+        uses: ./
+        with:
+          name: demo-worker
+          entrypoint-file: examples/main.go
+          memory: 256
+          timeout: 15
+          worker: true  # Enable worker mode with SQS queue
+          permissions: |
+            s3: read
+            dynamodb: write
+
+      # Deploy the Lambda function
+      - name: Deploy Lambda Web
+        id: deploy
+        uses: ./
+        with:
+          name: demo
+          entrypoint-file: examples/main.go
+          memory: 256
+          timeout: 15
+          allow-public-access: true
+          permissions: |
+            s3: read
+            sqs: write
+            
+      # Optional: Output the created resources
+      - name: Output Lambda info
+        run: |
+          echo "Lambda ARN: ${{ steps.deploy.outputs.arn }}"
+          echo "Lambda URL: ${{ steps.deploy.outputs.url }}"
+          echo "Queue ARN: ${{ steps.worker.outputs.queue-arn }}"
+          echo "Queue Name: ${{ steps.worker.outputs.queue-name }}"
+          echo "Queue URL: ${{ steps.worker.outputs.queue-url }}"
+        shell: bash
