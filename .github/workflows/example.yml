@@ -36,6 +36,8 @@ jobs:
       # If omitted, Lambda functions will use the default VPC (when EFS is enabled)
       - name: Set up network
         uses: realsensesolutions/actions-aws-network@main
+        with:
+          action: destroy
 
       - name: Deploy Lambda Worker
         id: worker
