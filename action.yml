@@ -100,25 +100,25 @@ runs:
       run: |
         # Navigate to the working directory
         cd "${{ github.workspace }}/${{ inputs.working-directory }}"
-        
+
         # Install dependencies
         go mod tidy
-        
+
         # Set architecture based on ARM setting
         if [[ "${{ inputs.arm }}" == "true" ]]; then
           export GOARCH=arm64
         else
           export GOARCH=amd64
         fi
-        
+
         # Build the binary
         export GOOS=linux
-        export CGO_ENABLED=0
+        export CGO_ENABLED=1
         go build -tags lambda.norpc -o bootstrap .
-        
+
         # Create deployment package with the bootstrap binary
         zip "${{ github.action_path }}/lambda_function.zip" bootstrap
-        
+
         # If artifacts directory is specified, add its contents to the package
         if [[ -n "${{ inputs.artifacts }}" && -d "${{ github.workspace }}/${{ inputs.artifacts }}" ]]; then
           cd "${{ github.workspace }}/${{ inputs.artifacts }}"
