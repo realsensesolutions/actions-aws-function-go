@@ -113,7 +113,7 @@ runs:
 
         # Build the binary
         export GOOS=linux
-        export CGO_ENABLED=1
+        export CGO_ENABLED=0
         go build -tags lambda.norpc -o bootstrap .
 
         # Create deployment package with the bootstrap binary
