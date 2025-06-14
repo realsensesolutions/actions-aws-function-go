@@ -10,9 +10,9 @@ resource "aws_sqs_queue" "worker_queue" {
   name  = local.queue_name
 
   # Default SQS queue configuration
-  visibility_timeout_seconds = var.timeout + 5  # Set slightly higher than Lambda timeout
-  message_retention_seconds  = 1209600          # 14 days (maximum)
-  receive_wait_time_seconds  = 20               # Enable long polling
+  visibility_timeout_seconds = var.timeout + 5 # Set slightly higher than Lambda timeout
+  message_retention_seconds  = 1209600         # 14 days (maximum)
+  receive_wait_time_seconds  = 20              # Enable long polling
 
   # Add tags for identification
   tags = {

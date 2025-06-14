@@ -1,7 +1,7 @@
 locals {
   function_name       = "${var.name}-${random_id.suffix.hex}"
-  lambda_handler      = "bootstrap"  # Go Lambda handler is always bootstrap
-  runtime             = "provided.al2023"  # Go uses provided runtime
+  lambda_handler      = "bootstrap"       # Go Lambda handler is always bootstrap
+  runtime             = "provided.al2023" # Go uses provided runtime
   lambda_architecture = var.arm ? ["arm64"] : ["x86_64"]
 
   # EFS configuration
@@ -10,8 +10,8 @@ locals {
 
   # Network configuration - use provided network or fall back to default
   use_custom_network = length(var.vpc_id) > 0 && (length(var.subnet_public_ids) > 0 || length(var.subnet_private_ids) > 0)
-  vpc_id = local.use_custom_network ? var.vpc_id : (local.create_efs ? data.aws_vpc.default[0].id : "")
-  
+  vpc_id             = local.use_custom_network ? var.vpc_id : (local.create_efs ? data.aws_vpc.default[0].id : "")
+
   # Prioritize public subnets for Egress-only IGW, fall back to private subnets for NAT Gateway
   subnet_ids = local.use_custom_network ? (
     length(var.subnet_public_ids) > 0 ? split(",", var.subnet_public_ids) : split(",", var.subnet_private_ids)
@@ -26,8 +26,8 @@ locals {
   formatted_arn = length(var.efs_access_point_arn) > 0 ? (
     # Check common malformation pattern with :: (missing region)
     can(regex("arn:aws:elasticfilesystem::\\d+:access-point/fsap-[a-f0-9]+", var.efs_access_point_arn)) ?
-      replace(var.efs_access_point_arn, "arn:aws:elasticfilesystem::", "arn:aws:elasticfilesystem:${data.aws_region.current.name}:") :
-      var.efs_access_point_arn
+    replace(var.efs_access_point_arn, "arn:aws:elasticfilesystem::", "arn:aws:elasticfilesystem:${data.aws_region.current.name}:") :
+    var.efs_access_point_arn
   ) : ""
 
   # Debug output - will show in Terraform logs
@@ -65,7 +65,7 @@ locals {
   service_policies = length(var.permissions) > 0 ? flatten([
     for service, access_level in local.permissions_map :
     lookup(local.services, service, null) != null ?
-      lookup(lookup(local.services, service, {}), access_level, []) : []
+    lookup(lookup(local.services, service, {}), access_level, []) : []
   ]) : []
 
   # Combine all policies EXCEPT the basic execution role
@@ -126,7 +126,7 @@ resource "aws_lambda_function" "function" {
   memory_size      = var.memory
   timeout          = var.timeout
   architectures    = local.lambda_architecture
-  depends_on       = [
+  depends_on = [
     aws_iam_role_policy_attachment.lambda_basic,
     aws_iam_role_policy_attachment.lambda_policies,
     aws_iam_role_policy_attachment.lambda_vpc_access
@@ -140,8 +140,9 @@ resource "aws_lambda_function" "function" {
   dynamic "vpc_config" {
     for_each = local.create_efs ? [1] : []
     content {
-      subnet_ids         = local.subnet_ids
-      security_group_ids = [aws_security_group.lambda[0].id]
+      subnet_ids                  = local.subnet_ids
+      security_group_ids          = [aws_security_group.lambda[0].id]
+      ipv6_allowed_for_dual_stack = true
     }
   }
 
@@ -170,6 +171,9 @@ resource "aws_lambda_function_url" "function_url" {
   count              = local.create_function_url ? 1 : 0
   function_name      = aws_lambda_function.function.function_name
   authorization_type = "NONE"
+  url_config {
+    ipv6_enabled = true
+  }
 
   # cors {
   #  allow_origins = ["*"]
