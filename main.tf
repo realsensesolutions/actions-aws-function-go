@@ -171,9 +171,6 @@ resource "aws_lambda_function_url" "function_url" {
   count              = local.create_function_url ? 1 : 0
   function_name      = aws_lambda_function.function.function_name
   authorization_type = "NONE"
-  url_config {
-    ipv6_enabled = true
-  }
 
   # cors {
   #  allow_origins = ["*"]
