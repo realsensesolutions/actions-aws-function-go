@@ -109,6 +109,12 @@ variable "subnet_private_ids" {
   default     = ""
 }
 
+variable "subnet_public_ids" {
+  description = "Public subnet IDs from network action (comma-separated, for Egress-only IGW)"
+  type        = string
+  default     = ""
+}
+
 variable "sg_private_id" {
   description = "Private security group ID from network action (optional)"
   type        = string
