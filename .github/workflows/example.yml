@@ -52,6 +52,7 @@ jobs:
           permissions: |
             s3: read
             dynamodb: write
+            ses: write
 
       # Deploy the Lambda function
       - name: Deploy Lambda Web

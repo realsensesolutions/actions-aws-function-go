@@ -53,6 +53,10 @@ locals {
       read  = ["arn:aws:iam::aws:policy/AmazonSQSReadOnlyAccess"]
       write = ["arn:aws:iam::aws:policy/AmazonSQSFullAccess"]
     }
+    ses = {
+      read  = ["arn:aws:iam::aws:policy/AmazonSESReadOnlyAccess"]
+      write = ["arn:aws:iam::aws:policy/AmazonSESFullAccess"]
+    }
   }
 
   # Base policies to always include - removed from dynamic attachment
