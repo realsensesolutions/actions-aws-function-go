@@ -181,7 +181,7 @@ resource "aws_iam_role_policy_attachment" "lambda_basic" {
 
 # Dynamic policy attachments for additional policies
 resource "aws_iam_role_policy_attachment" "lambda_policies" {
-  for_each = { for idx, arn in local.policy_arns : idx => arn }
+  for_each = { for arn in local.policy_arns : replace(basename(arn), ":", "_") => arn }
 
   role       = aws_iam_role.lambda_role.name
   policy_arn = each.value
