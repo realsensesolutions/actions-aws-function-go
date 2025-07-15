@@ -53,6 +53,8 @@ jobs:
             s3: read
             dynamodb: write
             ses: write
+            cognito: write
+            secretsmanager: read
 
       # Deploy the Lambda function
       - name: Deploy Lambda Web
@@ -68,6 +70,8 @@ jobs:
           permissions: |
             s3: read
             sqs: write
+            sns: write
+            cloudwatch: write
             
       # Optional: Output the created resources
       - name: Output Lambda info

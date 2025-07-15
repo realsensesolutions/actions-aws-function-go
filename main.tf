@@ -57,6 +57,74 @@ locals {
       read  = ["arn:aws:iam::aws:policy/AmazonSESReadOnlyAccess"]
       write = ["arn:aws:iam::aws:policy/AmazonSESFullAccess"]
     }
+    sns = {
+      read  = ["arn:aws:iam::aws:policy/AmazonSNSReadOnlyAccess"]
+      write = ["arn:aws:iam::aws:policy/AmazonSNSFullAccess"]
+    }
+    kinesis = {
+      read  = ["arn:aws:iam::aws:policy/AmazonKinesisReadOnlyAccess"]
+      write = ["arn:aws:iam::aws:policy/AmazonKinesisFullAccess"]
+    }
+    rds = {
+      read  = ["arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess"]
+      write = ["arn:aws:iam::aws:policy/AmazonRDSFullAccess"]
+    }
+    cloudwatch = {
+      read  = ["arn:aws:iam::aws:policy/CloudWatchReadOnlyAccess"]
+      write = ["arn:aws:iam::aws:policy/CloudWatchFullAccess"]
+    }
+    stepfunctions = {
+      read  = ["arn:aws:iam::aws:policy/AWSStepFunctionsReadOnlyAccess"]
+      write = ["arn:aws:iam::aws:policy/AWSStepFunctionsFullAccess"]
+    }
+    secretsmanager = {
+      read  = ["arn:aws:iam::aws:policy/SecretsManagerReadWrite"]
+      write = ["arn:aws:iam::aws:policy/SecretsManagerReadWrite"]
+    }
+    ssm = {
+      read  = ["arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess"]
+      write = ["arn:aws:iam::aws:policy/AmazonSSMFullAccess"]
+    }
+    eventbridge = {
+      read  = ["arn:aws:iam::aws:policy/AmazonEventBridgeReadOnlyAccess"]
+      write = ["arn:aws:iam::aws:policy/AmazonEventBridgeFullAccess"]
+    }
+    ecr = {
+      read  = ["arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"]
+      write = ["arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess"]
+    }
+    redshift = {
+      read  = ["arn:aws:iam::aws:policy/AmazonRedshiftReadOnlyAccess"]
+      write = ["arn:aws:iam::aws:policy/AmazonRedshiftFullAccess"]
+    }
+    glue = {
+      read  = ["arn:aws:iam::aws:policy/AWSGlueConsoleFullAccess"]
+      write = ["arn:aws:iam::aws:policy/AWSGlueConsoleFullAccess"]
+    }
+    athena = {
+      read  = ["arn:aws:iam::aws:policy/AmazonAthenaFullAccess"]
+      write = ["arn:aws:iam::aws:policy/AmazonAthenaFullAccess"]
+    }
+    cognito = {
+      read  = ["arn:aws:iam::aws:policy/AmazonCognitoReadOnly"]
+      write = ["arn:aws:iam::aws:policy/AmazonCognitoPowerUser"]
+    }
+    apigateway = {
+      read  = ["arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess"]
+      write = ["arn:aws:iam::aws:policy/AmazonAPIGatewayAdministrator"]
+    }
+    lambda = {
+      read  = ["arn:aws:iam::aws:policy/AWSLambdaReadOnlyAccess"]
+      write = ["arn:aws:iam::aws:policy/AWSLambdaFullAccess"]
+    }
+    iot = {
+      read  = ["arn:aws:iam::aws:policy/AWSIoTDataAccess"]
+      write = ["arn:aws:iam::aws:policy/AWSIoTFullAccess"]
+    }
+    xray = {
+      read  = ["arn:aws:iam::aws:policy/AWSXRayReadOnlyAccess"]
+      write = ["arn:aws:iam::aws:policy/AWSXRayFullAccess"]
+    }
   }
 
   # Base policies to always include - removed from dynamic attachment

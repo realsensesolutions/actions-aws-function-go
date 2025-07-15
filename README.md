@@ -187,5 +187,23 @@ Supported services and access levels:
 - `s3`: `read` or `write`
 - `dynamodb`: `read` or `write`
 - `sqs`: `read` or `write`
+- `ses`: `read` or `write`
+- `sns`: `read` or `write`
+- `kinesis`: `read` or `write`
+- `rds`: `read` or `write`
+- `cloudwatch`: `read` or `write`
+- `stepfunctions`: `read` or `write`
+- `secretsmanager`: `read` or `write`
+- `ssm`: `read` or `write`
+- `eventbridge`: `read` or `write`
+- `ecr`: `read` or `write`
+- `redshift`: `read` or `write`
+- `glue`: `read` or `write`
+- `athena`: `read` or `write`
+- `cognito`: `read` or `write` (write includes `AdminUpdateUserAttributes`)
+- `apigateway`: `read` or `write`
+- `lambda`: `read` or `write`
+- `iot`: `read` or `write`
+- `xray`: `read` or `write`
 
 This uses standard AWS managed policies for each service and access level.
