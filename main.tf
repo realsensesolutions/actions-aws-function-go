@@ -37,8 +37,17 @@ locals {
   # Debug output - will show in Terraform logs
   debug_arn_formatted = "EFS Access Point ARN formatted: ${local.formatted_arn}"
 
+  # EventBridge Scheduler role name and ARN (deterministic)
+  eventbridge_role_name = "${var.name}-eventbridge-scheduler-role-${random_id.suffix.hex}"
+  eventbridge_role_arn  = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${local.eventbridge_role_name}"
+
   # Parse environment variables from YAML
-  env_vars = length(var.env) > 0 ? yamldecode(var.env) : {}
+  env_vars_base = length(var.env) > 0 ? yamldecode(var.env) : {}
+  
+  # Add EventBridge Scheduler role ARN to environment variables
+  env_vars = merge(local.env_vars_base, {
+    EVENTBRIDGE_SCHEDULER_ROLE_ARN = local.eventbridge_role_arn
+  })
 
   # Parse permissions from YAML
   permissions_map = length(var.permissions) > 0 ? yamldecode(var.permissions) : {}
@@ -274,5 +283,6 @@ data "aws_subnets" "default" {
   }
 }
 
-# Get current region
+# Get current region and account info
 data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}

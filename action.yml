@@ -81,6 +81,9 @@ outputs:
   queue-url:
     description: 'URL of the SQS queue (if worker mode is enabled)'
     value: ${{ steps.terraform.outputs.queue_url }}
+  eventbridge-scheduler-role-arn:
+    description: 'ARN of the EventBridge Scheduler role that can invoke this Lambda function'
+    value: ${{ steps.terraform.outputs.eventbridge_scheduler_role_arn }}
 
 runs:
   using: "composite"
@@ -222,12 +225,16 @@ runs:
           QUEUE_URL=$(terraform output -raw queue_url | tr -d '\r\n')
         fi
 
+        # Get EventBridge Scheduler role ARN
+        EVENTBRIDGE_ROLE_ARN=$(terraform output -raw eventbridge_scheduler_role_arn | tr -d '\r\n')
+
         # Set outputs properly
         echo "arn=$ARN" >> "$GITHUB_OUTPUT"
         echo "url=$URL" >> "$GITHUB_OUTPUT"
         echo "queue_arn=$QUEUE_ARN" >> "$GITHUB_OUTPUT"
         echo "queue_name=$QUEUE_NAME" >> "$GITHUB_OUTPUT"
         echo "queue_url=$QUEUE_URL" >> "$GITHUB_OUTPUT"
+        echo "eventbridge_scheduler_role_arn=$EVENTBRIDGE_ROLE_ARN" >> "$GITHUB_OUTPUT"
       shell: bash
       working-directory: ${{ github.action_path }}
       env:

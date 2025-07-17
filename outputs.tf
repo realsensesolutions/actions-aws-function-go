@@ -22,3 +22,8 @@ output "queue_url" {
   description = "URL of the SQS queue (if worker mode is enabled)"
   value       = local.create_queue ? aws_sqs_queue.worker_queue[0].url : ""
 }
+
+output "eventbridge_scheduler_role_arn" {
+  description = "ARN of the EventBridge Scheduler role that can invoke this Lambda function"
+  value       = aws_iam_role.eventbridge_scheduler_role.arn
+}
