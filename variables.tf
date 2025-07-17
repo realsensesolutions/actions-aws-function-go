@@ -120,3 +120,9 @@ variable "sg_private_id" {
   type        = string
   default     = ""
 }
+
+variable "use_public_subnet" {
+  description = "Use public subnets instead of private subnets (defaults to true)"
+  type        = bool
+  default     = true
+}

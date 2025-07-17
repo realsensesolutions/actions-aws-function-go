@@ -12,9 +12,13 @@ locals {
   use_custom_network = length(var.vpc_id) > 0 && (length(var.subnet_public_ids) > 0 || length(var.subnet_private_ids) > 0)
   vpc_id             = local.use_custom_network ? var.vpc_id : (local.create_efs ? data.aws_vpc.default[0].id : "")
 
-  # Prioritize public subnets for Egress-only IGW, fall back to private subnets for NAT Gateway
+  # Use subnet preference based on use_public_subnet variable
   subnet_ids = local.use_custom_network ? (
-    length(var.subnet_public_ids) > 0 ? split(",", var.subnet_public_ids) : split(",", var.subnet_private_ids)
+    var.use_public_subnet ? (
+      length(var.subnet_public_ids) > 0 ? split(",", var.subnet_public_ids) : split(",", var.subnet_private_ids)
+    ) : (
+      length(var.subnet_private_ids) > 0 ? split(",", var.subnet_private_ids) : split(",", var.subnet_public_ids)
+    )
   ) : (local.create_efs ? data.aws_subnets.default[0].ids : [])
 
   # Debug output - will show in Terraform logs
