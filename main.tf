@@ -38,7 +38,7 @@ locals {
   debug_arn_formatted = "EFS Access Point ARN formatted: ${local.formatted_arn}"
 
   # EventBridge Scheduler role name and ARN (deterministic)
-  eventbridge_role_name = "${var.name}-eventbridge-scheduler-role-${random_id.suffix.hex}"
+  eventbridge_role_name = substr("${var.name}-eventbridge-scheduler-role-${random_id.suffix.hex}", 0, 64)
   eventbridge_role_arn  = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${local.eventbridge_role_name}"
 
   # Parse environment variables from YAML
