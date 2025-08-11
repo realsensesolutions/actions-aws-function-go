@@ -138,6 +138,10 @@ locals {
       read  = ["arn:aws:iam::aws:policy/AWSXRayReadOnlyAccess"]
       write = ["arn:aws:iam::aws:policy/AWSXRayFullAccess"]
     }
+    textract = {
+      read  = ["arn:aws:iam::aws:policy/AmazonTextractFullAccess"]
+      write = ["arn:aws:iam::aws:policy/AmazonTextractFullAccess"]
+    }
   }
 
   # Base policies to always include - removed from dynamic attachment
