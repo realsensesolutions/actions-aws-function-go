@@ -70,6 +70,7 @@ jobs:
           dd-tracing: true
           dd-api-key: ${{ secrets.DATADOG_API_KEY }}
           env: |
+            DD_SITE: us5.datadoghq.com
             DD_SERVICE: demo-service
             DD_ENV: staging
             DD_VERSION: ${{ github.sha }}

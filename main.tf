@@ -46,12 +46,13 @@ locals {
   
   # Add EventBridge Scheduler role ARN to environment variables
   # Merge with Datadog environment variables if enabled
+  # Note: merge order ensures user values (env_vars_base) override defaults (dd_env_vars)
   env_vars = merge(
-    local.env_vars_base,
+    local.dd_env_vars,
     {
       EVENTBRIDGE_SCHEDULER_ROLE_ARN = local.eventbridge_role_arn
     },
-    local.dd_env_vars
+    local.env_vars_base
   )
 
   # Parse permissions from YAML
