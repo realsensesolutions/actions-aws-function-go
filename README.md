@@ -268,7 +268,7 @@ To enable distributed tracing, you must wrap your Lambda handler with the Datado
 
 ```go
 require (
-    github.com/DataDog/datadog-lambda-go v1.13.0
+    github.com/DataDog/datadog-lambda-go v1.28.0
     github.com/aws/aws-lambda-go v1.48.0
 )
 ```
@@ -363,6 +363,11 @@ func handler(ctx context.Context, event interface{}) (interface{}, error) {
 - Verify `DATADOG_API_KEY` GitHub secret is set correctly
 - Check CloudWatch Logs for Datadog Extension errors
 - Ensure your Lambda has internet access (NAT Gateway for VPC functions)
+
+**"Please upgrade your tracing library" or "404 Not Found" errors:**
+- You're using an outdated version of `datadog-lambda-go`
+- Update to `v1.28.0` or later in your `go.mod`
+- The library must be compatible with Extension layer v86
 
 **Import errors:**
 - Run `go mod tidy` in your working directory
