@@ -126,3 +126,16 @@ variable "use_public_subnet" {
   type        = bool
   default     = true
 }
+
+# Datadog variables
+variable "dd_enabled" {
+  description = "Enable Datadog tracing and observability"
+  type        = bool
+  default     = false
+}
+
+variable "dd_secret_arn" {
+  description = "ARN of AWS Secrets Manager secret containing Datadog API key"
+  type        = string
+  default     = ""
+}

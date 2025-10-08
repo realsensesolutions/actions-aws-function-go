@@ -64,6 +64,14 @@ inputs:
     description: 'Use public subnets instead of private subnets (defaults to true)'
     required: false
     default: 'true'
+  dd-tracing:
+    description: 'Enable Datadog tracing and observability'
+    required: false
+    default: 'false'
+  dd-api-key:
+    description: 'Datadog API key from GitHub secrets (required if dd-tracing is enabled)'
+    required: false
+    default: ''
 
 outputs:
   arn:
@@ -134,6 +142,33 @@ runs:
         fi
       shell: bash
 
+    # Setup Datadog secret in AWS Secrets Manager (if Datadog is enabled)
+    - name: Setup Datadog Secret
+      id: datadog-secret
+      if: inputs.dd-tracing == 'true'
+      run: |
+        # Check if secret exists
+        SECRET_ARN=$(aws secretsmanager describe-secret --secret-id datadog-api-key --query ARN --output text 2>/dev/null || echo "")
+        
+        if [ -z "$SECRET_ARN" ]; then
+          echo "Creating new Datadog API key secret..."
+          SECRET_ARN=$(aws secretsmanager create-secret \
+            --name datadog-api-key \
+            --description "Datadog API key for Lambda observability" \
+            --secret-string "${{ inputs.dd-api-key }}" \
+            --query ARN --output text)
+          echo "Created secret: $SECRET_ARN"
+        else
+          echo "Updating existing Datadog API key secret..."
+          aws secretsmanager update-secret \
+            --secret-id datadog-api-key \
+            --secret-string "${{ inputs.dd-api-key }}"
+          echo "Updated secret: $SECRET_ARN"
+        fi
+        
+        echo "secret_arn=$SECRET_ARN" >> "$GITHUB_OUTPUT"
+      shell: bash
+
     - name: Terraform init
       run: |
         terraform init -reconfigure \
@@ -160,6 +195,8 @@ runs:
         TF_VAR_efs_access_point_arn: ${{ steps.efs.outputs.access_point_arn }}
         TF_VAR_efs_id: ${{ steps.efs.outputs.efs_id }}
         TF_VAR_efs_arn: ${{ steps.efs.outputs.efs_arn }}
+        TF_VAR_dd_enabled: ${{ inputs.dd-tracing == 'true' }}
+        TF_VAR_dd_secret_arn: ${{ steps.datadog-secret.outputs.secret_arn }}
 
     - name: Terraform plan
       if: inputs.action == 'plan'
@@ -183,6 +220,8 @@ runs:
         TF_VAR_efs_access_point_arn: ${{ steps.efs.outputs.access_point_arn }}
         TF_VAR_efs_id: ${{ steps.efs.outputs.efs_id }}
         TF_VAR_efs_arn: ${{ steps.efs.outputs.efs_arn }}
+        TF_VAR_dd_enabled: ${{ inputs.dd-tracing == 'true' }}
+        TF_VAR_dd_secret_arn: ${{ steps.datadog-secret.outputs.secret_arn }}
 
     - name: Terraform destroy
       if: inputs.action == 'destroy'
@@ -206,6 +245,8 @@ runs:
         TF_VAR_efs_access_point_arn: ${{ steps.efs.outputs.access_point_arn }}
         TF_VAR_efs_id: ${{ steps.efs.outputs.efs_id }}
         TF_VAR_efs_arn: ${{ steps.efs.outputs.efs_arn }}
+        TF_VAR_dd_enabled: ${{ inputs.dd-tracing == 'true' }}
+        TF_VAR_dd_secret_arn: ${{ steps.datadog-secret.outputs.secret_arn }}
 
     - name: Terraform apply
       id: terraform
@@ -254,3 +295,5 @@ runs:
         TF_VAR_efs_access_point_arn: ${{ steps.efs.outputs.access_point_arn }}
         TF_VAR_efs_id: ${{ steps.efs.outputs.efs_id }}
         TF_VAR_efs_arn: ${{ steps.efs.outputs.efs_arn }}
+        TF_VAR_dd_enabled: ${{ inputs.dd-tracing == 'true' }}
+        TF_VAR_dd_secret_arn: ${{ steps.datadog-secret.outputs.secret_arn }}

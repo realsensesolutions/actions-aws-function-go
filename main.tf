@@ -45,9 +45,14 @@ locals {
   env_vars_base = length(var.env) > 0 ? yamldecode(var.env) : {}
   
   # Add EventBridge Scheduler role ARN to environment variables
-  env_vars = merge(local.env_vars_base, {
-    EVENTBRIDGE_SCHEDULER_ROLE_ARN = local.eventbridge_role_arn
-  })
+  # Merge with Datadog environment variables if enabled
+  env_vars = merge(
+    local.env_vars_base,
+    {
+      EVENTBRIDGE_SCHEDULER_ROLE_ARN = local.eventbridge_role_arn
+    },
+    local.dd_env_vars
+  )
 
   # Parse permissions from YAML
   permissions_map = length(var.permissions) > 0 ? yamldecode(var.permissions) : {}
@@ -204,6 +209,14 @@ resource "aws_iam_role_policy_attachment" "lambda_policies" {
   policy_arn = each.value
 }
 
+# Inline policy for Datadog Secrets Manager access (when enabled)
+resource "aws_iam_role_policy" "lambda_datadog_secrets" {
+  count  = local.dd_secrets_policy != null ? 1 : 0
+  name   = "${var.name}-datadog-secrets-${random_id.suffix.hex}"
+  role   = aws_iam_role.lambda_role.id
+  policy = jsonencode(local.dd_secrets_policy)
+}
+
 # Create the Lambda function
 resource "aws_lambda_function" "function" {
   function_name    = local.function_name
@@ -215,10 +228,15 @@ resource "aws_lambda_function" "function" {
   memory_size      = var.memory
   timeout          = var.timeout
   architectures    = local.lambda_architecture
+  
+  # Add Datadog Extension layer if enabled
+  layers = var.dd_enabled && length(local.dd_layer_arn) > 0 ? [local.dd_layer_arn] : []
+  
   depends_on = [
     aws_iam_role_policy_attachment.lambda_basic,
     aws_iam_role_policy_attachment.lambda_policies,
-    aws_iam_role_policy_attachment.lambda_vpc_access
+    aws_iam_role_policy_attachment.lambda_vpc_access,
+    aws_iam_role_policy.lambda_datadog_secrets
   ]
 
   environment {

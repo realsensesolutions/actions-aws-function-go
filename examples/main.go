@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 
+	ddlambda "github.com/DataDog/datadog-lambda-go"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 )
@@ -157,5 +159,13 @@ func router(ctx context.Context, event json.RawMessage) (interface{}, error) {
 }
 
 func main() {
-	lambda.Start(router)
+	// Check if Datadog is enabled via environment variable
+	// When dd-tracing is enabled, DD_API_KEY_SECRET_ARN will be set
+	if os.Getenv("DD_API_KEY_SECRET_ARN") != "" {
+		log.Println("Datadog tracing enabled - wrapping Lambda handler")
+		lambda.Start(ddlambda.WrapFunction(router, nil))
+	} else {
+		log.Println("Datadog tracing disabled - using standard Lambda handler")
+		lambda.Start(router)
+	}
 } 

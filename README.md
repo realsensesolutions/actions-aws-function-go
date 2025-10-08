@@ -24,6 +24,8 @@ This GitHub Action provisions an AWS Lambda function using Go runtime via Terraf
 | allow-public-access | Generate a public URL. WARNING: ANYONE ON THE INTERNET CAN RUN THIS FUNCTION           | false    | ""                                           |
 | volume-name         | Name of the EFS volume to create or use. Will be managed by actions-aws-volume        | false    | ""                                           |
 | volume-path         | Path where the EFS volume will be mounted in Lambda (defaults to /mnt/{volume-name})  | false    | ""                                           |
+| dd-tracing          | Enable Datadog tracing and observability                                               | false    | false                                        |
+| dd-api-key          | Datadog API key from GitHub secrets (required if dd-tracing is enabled)                | false    | ""                                           |
 
 ## Outputs
 
@@ -207,3 +209,163 @@ Supported services and access levels:
 - `xray`: `read` or `write`
 
 This uses standard AWS managed policies for each service and access level.
+
+## Datadog Integration
+
+This action provides built-in support for Datadog observability, allowing you to monitor your Lambda functions with distributed tracing, metrics, and logs.
+
+### Quick Start
+
+To enable Datadog monitoring for your Lambda function:
+
+```yaml
+- uses: alonch/actions-aws-function-go@main
+  with:
+    name: my-lambda-function
+    working-directory: .
+    entrypoint-file: main.go
+    dd-tracing: true
+    dd-api-key: ${{ secrets.DATADOG_API_KEY }}
+```
+
+### What Gets Configured
+
+When `dd-tracing: true` is set, the action automatically:
+
+1. **Creates an AWS Secrets Manager secret** named `datadog-api-key` (shared across all your Lambda functions)
+2. **Attaches the Datadog Lambda Extension layer** (v86) to your function
+3. **Injects environment variables**:
+   - `DD_SITE`: `datadoghq.com` (US1 region)
+   - `DD_API_KEY_SECRET_ARN`: ARN of the created secret
+4. **Grants IAM permissions** for Secrets Manager access
+
+### Custom Configuration
+
+You can customize Datadog settings using the `env` input:
+
+```yaml
+- uses: alonch/actions-aws-function-go@main
+  with:
+    name: my-lambda-function
+    working-directory: .
+    entrypoint-file: main.go
+    dd-tracing: true
+    dd-api-key: ${{ secrets.DATADOG_API_KEY }}
+    env: |
+      DD_SERVICE: my-custom-service
+      DD_ENV: production
+      DD_VERSION: ${{ github.sha }}
+      DD_SITE: datadoghq.eu
+      DD_LOGS_INJECTION: true
+      DD_TRACE_ENABLED: true
+```
+
+### Required Code Changes
+
+To enable distributed tracing, you must wrap your Lambda handler with the Datadog wrapper:
+
+**1. Add the Datadog dependency to your `go.mod`:**
+
+```go
+require (
+    github.com/DataDog/datadog-lambda-go v1.13.0
+    github.com/aws/aws-lambda-go v1.48.0
+)
+```
+
+**2. Update your main function:**
+
+```go
+package main
+
+import (
+    "context"
+    ddlambda "github.com/DataDog/datadog-lambda-go"
+    "github.com/aws/aws-lambda-go/lambda"
+)
+
+func handler(ctx context.Context, event interface{}) (interface{}, error) {
+    // Your handler logic
+    return "ok", nil
+}
+
+func main() {
+    // Wrap your handler with Datadog
+    lambda.Start(ddlambda.WrapFunction(handler, nil))
+}
+```
+
+**Optional: Conditional wrapping** (works with or without Datadog):
+
+```go
+import "os"
+
+func main() {
+    if os.Getenv("DD_API_KEY_SECRET_ARN") != "" {
+        // Datadog enabled
+        lambda.Start(ddlambda.WrapFunction(handler, nil))
+    } else {
+        // Standard Lambda handler
+        lambda.Start(handler)
+    }
+}
+```
+
+### Architecture Support
+
+The action automatically selects the correct Datadog Extension layer based on your `arm` setting:
+- **ARM64**: Uses `Datadog-Extension-ARM` layer
+- **x86_64**: Uses `Datadog-Extension` layer (when `arm: false`)
+
+### Prerequisites
+
+1. **Create a Datadog account** at [datadoghq.com](https://www.datadoghq.com/)
+2. **Generate a Datadog API key** from your Datadog dashboard
+3. **Add the API key as a GitHub secret** named `DATADOG_API_KEY`
+
+### What You Get
+
+With Datadog enabled, you can monitor:
+- **Distributed traces** across your Lambda functions and services
+- **Custom metrics** using `ddlambda.Metric()`
+- **Enhanced logs** with automatic trace correlation
+- **Cold start metrics** and invocation details
+- **Performance insights** and bottleneck detection
+
+### Example with Custom Metrics
+
+```go
+import ddlambda "github.com/DataDog/datadog-lambda-go"
+
+func handler(ctx context.Context, event interface{}) (interface{}, error) {
+    // Submit a custom metric
+    ddlambda.Metric(
+        "my_app.orders.count",
+        42,
+        "environment:prod", "team:backend",
+    )
+    
+    return "ok", nil
+}
+```
+
+### Notes
+
+- The Datadog secret persists even when Lambda functions are destroyed (cost: ~$0.40/month)
+- The Datadog Extension layer version (v86) is hardcoded and may need updates
+- For non-US1 Datadog sites, override `DD_SITE` using the `env` input
+- Basic metrics are collected even without wrapping your handler (via the Extension layer)
+- Distributed tracing requires handler wrapping
+
+### Troubleshooting
+
+**Datadog not receiving data:**
+- Verify `DATADOG_API_KEY` GitHub secret is set correctly
+- Check CloudWatch Logs for Datadog Extension errors
+- Ensure your Lambda has internet access (NAT Gateway for VPC functions)
+
+**Import errors:**
+- Run `go mod tidy` in your working directory
+- Verify `github.com/DataDog/datadog-lambda-go` is in your `go.mod`
+
+See the [examples directory](./examples/main.go) for a complete working example with Datadog integration.

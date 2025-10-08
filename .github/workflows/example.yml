@@ -67,6 +67,12 @@ jobs:
           memory: 256
           timeout: 15
           allow-public-access: true
+          dd-tracing: true
+          dd-api-key: ${{ secrets.DATADOG_API_KEY }}
+          env: |
+            DD_SERVICE: demo-service
+            DD_ENV: staging
+            DD_VERSION: ${{ github.sha }}
           permissions: |
             s3: read
             sqs: write
