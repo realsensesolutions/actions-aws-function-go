@@ -195,7 +195,7 @@ runs:
         TF_VAR_efs_access_point_arn: ${{ steps.efs.outputs.access_point_arn }}
         TF_VAR_efs_id: ${{ steps.efs.outputs.efs_id }}
         TF_VAR_efs_arn: ${{ steps.efs.outputs.efs_arn }}
-        TF_VAR_dd_enabled: ${{ inputs.dd-tracing == 'true' }}
+        TF_VAR_dd_enabled: ${{ inputs.dd-tracing }}
         TF_VAR_dd_secret_arn: ${{ steps.datadog-secret.outputs.secret_arn }}
 
     - name: Terraform plan
@@ -220,7 +220,7 @@ runs:
         TF_VAR_efs_access_point_arn: ${{ steps.efs.outputs.access_point_arn }}
         TF_VAR_efs_id: ${{ steps.efs.outputs.efs_id }}
         TF_VAR_efs_arn: ${{ steps.efs.outputs.efs_arn }}
-        TF_VAR_dd_enabled: ${{ inputs.dd-tracing == 'true' }}
+        TF_VAR_dd_enabled: ${{ inputs.dd-tracing }}
         TF_VAR_dd_secret_arn: ${{ steps.datadog-secret.outputs.secret_arn }}
 
     - name: Terraform destroy
@@ -245,7 +245,7 @@ runs:
         TF_VAR_efs_access_point_arn: ${{ steps.efs.outputs.access_point_arn }}
         TF_VAR_efs_id: ${{ steps.efs.outputs.efs_id }}
         TF_VAR_efs_arn: ${{ steps.efs.outputs.efs_arn }}
-        TF_VAR_dd_enabled: ${{ inputs.dd-tracing == 'true' }}
+        TF_VAR_dd_enabled: ${{ inputs.dd-tracing }}
         TF_VAR_dd_secret_arn: ${{ steps.datadog-secret.outputs.secret_arn }}
 
     - name: Terraform apply
@@ -295,5 +295,5 @@ runs:
         TF_VAR_efs_access_point_arn: ${{ steps.efs.outputs.access_point_arn }}
         TF_VAR_efs_id: ${{ steps.efs.outputs.efs_id }}
         TF_VAR_efs_arn: ${{ steps.efs.outputs.efs_arn }}
-        TF_VAR_dd_enabled: ${{ inputs.dd-tracing == 'true' }}
+        TF_VAR_dd_enabled: ${{ inputs.dd-tracing }}
         TF_VAR_dd_secret_arn: ${{ steps.datadog-secret.outputs.secret_arn }}
