@@ -157,8 +157,8 @@ locals {
       write = ["arn:aws:iam::aws:policy/AmazonTextractFullAccess"]
     }
     dsql = {
-      read  = ["arn:aws:iam::aws:policy/AmazonDSQLReadOnlyAccess"]
-      write = ["arn:aws:iam::aws:policy/AmazonDSQLFullAccess"]
+      read  = ["arn:aws:iam::aws:policy/AmazonAuroraDSQLReadOnlyAccess"]
+      write = ["arn:aws:iam::aws:policy/AmazonAuroraDSQLFullAccess"]
     }
   }
 
