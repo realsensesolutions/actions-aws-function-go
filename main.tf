@@ -44,6 +44,13 @@ locals {
   # Parse environment variables from YAML
   env_vars_base = length(var.env) > 0 ? yamldecode(var.env) : {}
   
+  # Add DSQL environment variables if provided
+  dsql_env_vars = merge(
+    length(var.dsql_cluster_endpoint) > 0 ? { DSQL_CLUSTER_ENDPOINT = var.dsql_cluster_endpoint } : {},
+    length(var.dsql_cluster_arn) > 0 ? { DSQL_CLUSTER_ARN = var.dsql_cluster_arn } : {},
+    length(var.dsql_region) > 0 ? { DSQL_REGION = var.dsql_region } : {}
+  )
+  
   # Add EventBridge Scheduler role ARN to environment variables
   # Merge with Datadog environment variables if enabled
   # Note: merge order ensures user values (env_vars_base) override defaults (dd_env_vars)
@@ -52,6 +59,7 @@ locals {
     {
       EVENTBRIDGE_SCHEDULER_ROLE_ARN = local.eventbridge_role_arn
     },
+    local.dsql_env_vars,
     local.env_vars_base
   )
 
@@ -147,6 +155,10 @@ locals {
     textract = {
       read  = ["arn:aws:iam::aws:policy/AmazonTextractFullAccess"]
       write = ["arn:aws:iam::aws:policy/AmazonTextractFullAccess"]
+    }
+    dsql = {
+      read  = ["arn:aws:iam::aws:policy/AmazonDSQLReadOnlyAccess"]
+      write = ["arn:aws:iam::aws:policy/AmazonDSQLFullAccess"]
     }
   }
 

@@ -139,3 +139,22 @@ variable "dd_secret_arn" {
   type        = string
   default     = ""
 }
+
+# DSQL variables
+variable "dsql_cluster_endpoint" {
+  description = "DSQL cluster endpoint"
+  type        = string
+  default     = ""
+}
+
+variable "dsql_cluster_arn" {
+  description = "DSQL cluster ARN"
+  type        = string
+  default     = ""
+}
+
+variable "dsql_region" {
+  description = "DSQL region"
+  type        = string
+  default     = ""
+}
