@@ -79,6 +79,7 @@ jobs:
             sqs: write
             sns: write
             cloudwatch: write
+            dsql: write
             
       # Optional: Output the created resources
       - name: Output Lambda info
