@@ -1,10 +1,10 @@
 # Get VPC and subnets - use provided network or fall back to default
 
-# Create security group for Lambda
+# Create security group for Lambda (when VPC is used)
 resource "aws_security_group" "lambda" {
-  count       = local.create_efs ? 1 : 0
+  count       = local.use_vpc_config ? 1 : 0
   name        = "${var.name}-lambda-sg-${random_id.suffix.hex}"
-  description = "Allow Lambda to access EFS"
+  description = "Security group for Lambda in VPC"
   vpc_id      = local.vpc_id
 
   egress {
@@ -26,9 +26,9 @@ resource "aws_security_group" "lambda" {
   }
 }
 
-# Add necessary permissions to Lambda execution role
+# Add necessary permissions to Lambda execution role (when VPC is used)
 resource "aws_iam_role_policy_attachment" "lambda_vpc_access" {
-  count      = local.create_efs ? 1 : 0
+  count      = local.use_vpc_config ? 1 : 0
   role       = aws_iam_role.lambda_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }

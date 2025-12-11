@@ -15,7 +15,7 @@ locals {
 
   # Datadog environment variables to inject when enabled
   dd_env_vars = var.dd_enabled ? {
-    DD_SITE                = "datadoghq.com"
+    DD_SITE               = "datadoghq.com"
     DD_API_KEY_SECRET_ARN = var.dd_secret_arn
   } : {}
 

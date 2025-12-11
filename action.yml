@@ -64,6 +64,10 @@ inputs:
     description: 'Use public subnets instead of private subnets (defaults to true)'
     required: false
     default: 'true'
+  use-vpc:
+    description: 'Place Lambda function in VPC (defaults to false, automatically true if EFS volume is configured)'
+    required: false
+    default: 'false'
   dd-tracing:
     description: 'Enable Datadog tracing and observability'
     required: false
@@ -204,6 +208,7 @@ runs:
         TF_VAR_volume: ${{ inputs.volume-name }}
         TF_VAR_volume_path: ${{ inputs.volume-path }}
         TF_VAR_use_public_subnet: ${{ inputs.use-public-subnet }}
+        TF_VAR_use_vpc: ${{ inputs.use-vpc }}
         TF_VAR_efs_access_point_arn: ${{ steps.efs.outputs.access_point_arn }}
         TF_VAR_efs_id: ${{ steps.efs.outputs.efs_id }}
         TF_VAR_efs_arn: ${{ steps.efs.outputs.efs_arn }}
@@ -232,6 +237,7 @@ runs:
         TF_VAR_volume: ${{ inputs.volume-name }}
         TF_VAR_volume_path: ${{ inputs.volume-path }}
         TF_VAR_use_public_subnet: ${{ inputs.use-public-subnet }}
+        TF_VAR_use_vpc: ${{ inputs.use-vpc }}
         TF_VAR_efs_access_point_arn: ${{ steps.efs.outputs.access_point_arn }}
         TF_VAR_efs_id: ${{ steps.efs.outputs.efs_id }}
         TF_VAR_efs_arn: ${{ steps.efs.outputs.efs_arn }}
@@ -260,6 +266,7 @@ runs:
         TF_VAR_volume: ${{ inputs.volume-name }}
         TF_VAR_volume_path: ${{ inputs.volume-path }}
         TF_VAR_use_public_subnet: ${{ inputs.use-public-subnet }}
+        TF_VAR_use_vpc: ${{ inputs.use-vpc }}
         TF_VAR_efs_access_point_arn: ${{ steps.efs.outputs.access_point_arn }}
         TF_VAR_efs_id: ${{ steps.efs.outputs.efs_id }}
         TF_VAR_efs_arn: ${{ steps.efs.outputs.efs_arn }}
@@ -310,6 +317,7 @@ runs:
         TF_VAR_volume: ${{ inputs.volume-name }}
         TF_VAR_volume_path: ${{ inputs.volume-path }}
         TF_VAR_use_public_subnet: ${{ inputs.use-public-subnet }}
+        TF_VAR_use_vpc: ${{ inputs.use-vpc }}
         TF_VAR_efs_access_point_arn: ${{ steps.efs.outputs.access_point_arn }}
         TF_VAR_efs_id: ${{ steps.efs.outputs.efs_id }}
         TF_VAR_efs_arn: ${{ steps.efs.outputs.efs_arn }}

@@ -8,9 +8,12 @@ locals {
   create_efs = length(var.volume) > 0
   mount_path = length(var.volume_path) > 0 ? var.volume_path : "/mnt/${var.volume}"
 
+  # VPC configuration - use VPC if EFS is configured OR use_vpc is explicitly set to true
+  use_vpc_config = local.create_efs || var.use_vpc
+
   # Network configuration - use provided network or fall back to default
   use_custom_network = length(var.vpc_id) > 0 && (length(var.subnet_public_ids) > 0 || length(var.subnet_private_ids) > 0)
-  vpc_id             = local.use_custom_network ? var.vpc_id : (local.create_efs ? data.aws_vpc.default[0].id : "")
+  vpc_id             = local.use_custom_network ? var.vpc_id : (local.use_vpc_config ? data.aws_vpc.default[0].id : "")
 
   # Use subnet preference based on use_public_subnet variable
   subnet_ids = local.use_custom_network ? (
@@ -19,7 +22,7 @@ locals {
     ) : (
       length(var.subnet_private_ids) > 0 ? split(",", var.subnet_private_ids) : split(",", var.subnet_public_ids)
     )
-  ) : (local.create_efs ? data.aws_subnets.default[0].ids : [])
+  ) : (local.use_vpc_config ? data.aws_subnets.default[0].ids : [])
 
   # Debug output - will show in Terraform logs
   debug_arn_received = "EFS Access Point ARN received: ${var.efs_access_point_arn}"
@@ -248,7 +251,8 @@ resource "aws_lambda_function" "function" {
   depends_on = [
     aws_iam_role_policy_attachment.lambda_basic,
     aws_iam_role_policy_attachment.lambda_policies,
-    aws_iam_role_policy_attachment.lambda_vpc_access,
+    aws_iam_role_policy_attachment.lambda_vpc_access
+  ]
     aws_iam_role_policy.lambda_datadog_secrets
   ]
 
@@ -256,9 +260,9 @@ resource "aws_lambda_function" "function" {
     variables = local.env_vars
   }
 
-  # VPC configuration for EFS
+  # VPC configuration - enabled when EFS is configured OR use_vpc is true
   dynamic "vpc_config" {
-    for_each = local.create_efs ? [1] : []
+    for_each = local.use_vpc_config ? [1] : []
     content {
       subnet_ids                  = local.subnet_ids
       security_group_ids          = [aws_security_group.lambda[0].id]
@@ -302,12 +306,12 @@ resource "aws_lambda_function_url" "function_url" {
 
 # VPC and subnet data sources for fallback to default VPC
 data "aws_vpc" "default" {
-  count   = local.create_efs && !local.use_custom_network ? 1 : 0
+  count   = local.use_vpc_config && !local.use_custom_network ? 1 : 0
   default = true
 }
 
 data "aws_subnets" "default" {
-  count = local.create_efs && !local.use_custom_network ? 1 : 0
+  count = local.use_vpc_config && !local.use_custom_network ? 1 : 0
   filter {
     name   = "vpc-id"
     values = [data.aws_vpc.default[0].id]

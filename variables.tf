@@ -127,6 +127,12 @@ variable "use_public_subnet" {
   default     = true
 }
 
+variable "use_vpc" {
+  description = "Place Lambda function in VPC (defaults to false, automatically true if EFS volume is configured)"
+  type        = bool
+  default     = false
+}
+
 # Datadog variables
 variable "dd_enabled" {
   description = "Enable Datadog tracing and observability"
