@@ -19,7 +19,7 @@ locals {
   subnet_ids = local.use_custom_network ? (
     var.use_public_subnet ? (
       length(var.subnet_public_ids) > 0 ? split(",", var.subnet_public_ids) : split(",", var.subnet_private_ids)
-    ) : (
+      ) : (
       length(var.subnet_private_ids) > 0 ? split(",", var.subnet_private_ids) : split(",", var.subnet_public_ids)
     )
   ) : (local.use_vpc_config ? data.aws_subnets.default[0].ids : [])
@@ -46,14 +46,14 @@ locals {
 
   # Parse environment variables from YAML
   env_vars_base = length(var.env) > 0 ? yamldecode(var.env) : {}
-  
+
   # Add DSQL environment variables if provided
   dsql_env_vars = merge(
     length(var.dsql_cluster_endpoint) > 0 ? { DSQL_CLUSTER_ENDPOINT = var.dsql_cluster_endpoint } : {},
     length(var.dsql_cluster_arn) > 0 ? { DSQL_CLUSTER_ARN = var.dsql_cluster_arn } : {},
     length(var.dsql_region) > 0 ? { DSQL_REGION = var.dsql_region } : {}
   )
-  
+
   # Add EventBridge Scheduler role ARN to environment variables
   # Merge with Datadog environment variables if enabled
   # Note: merge order ensures user values (env_vars_base) override defaults (dd_env_vars)
@@ -244,15 +244,14 @@ resource "aws_lambda_function" "function" {
   memory_size      = var.memory
   timeout          = var.timeout
   architectures    = local.lambda_architecture
-  
+
   # Add Datadog Extension layer if enabled
   layers = var.dd_enabled && length(local.dd_layer_arn) > 0 ? [local.dd_layer_arn] : []
-  
+
   depends_on = [
     aws_iam_role_policy_attachment.lambda_basic,
     aws_iam_role_policy_attachment.lambda_policies,
-    aws_iam_role_policy_attachment.lambda_vpc_access
-  ]
+    aws_iam_role_policy_attachment.lambda_vpc_access,
     aws_iam_role_policy.lambda_datadog_secrets
   ]
 
