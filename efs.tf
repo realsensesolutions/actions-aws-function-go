@@ -4,7 +4,7 @@
 resource "aws_security_group" "lambda" {
   count       = local.use_vpc_config ? 1 : 0
   name        = "${var.name}-lambda-sg-${random_id.suffix.hex}"
-  description = "Security group for Lambda in VPC"
+  description = "Allow Lambda to access EFS"
   vpc_id      = local.vpc_id
 
   egress {
