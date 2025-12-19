@@ -181,8 +181,12 @@ locals {
   # Combine all policies EXCEPT the basic execution role
   policy_arns = distinct(concat(local.worker_policies, local.service_policies))
 
+  # Tenant isolation mode
+  enable_tenant_isolation = var.tenant_isolation_mode == "PER_TENANT"
+
   # Determine if we should create a function URL
-  create_function_url = length(var.allow_public_access) > 0
+  # Function URLs are NOT compatible with tenant isolation mode
+  create_function_url = length(var.allow_public_access) > 0 && !local.enable_tenant_isolation
 }
 
 # Generate random suffix for unique resource naming
@@ -276,6 +280,14 @@ resource "aws_lambda_function" "function" {
       # arn is provided directly from GitHub Action output via TF_VAR
       arn              = local.formatted_arn
       local_mount_path = local.mount_path
+    }
+  }
+
+  # Tenant isolation for multi-tenant SaaS (only at creation time, immutable)
+  dynamic "tenancy_config" {
+    for_each = local.enable_tenant_isolation ? [1] : []
+    content {
+      tenant_isolation_mode = var.tenant_isolation_mode
     }
   }
 

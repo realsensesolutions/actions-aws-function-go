@@ -81,6 +81,28 @@ jobs:
             cloudwatch: write
             dsql: write
             
+      # Optional: Test tenant isolation mode (uncomment to test)
+      # - name: Deploy Lambda with Tenant Isolation
+      #   id: tenant-isolated
+      #   uses: ./
+      #   with:
+      #     name: demo-tenant-isolated
+      #     working-directory: examples
+      #     entrypoint-file: main.go
+      #     memory: 256
+      #     timeout: 15
+      #     tenant-isolation-mode: PER_TENANT
+      #     # Note: allow-public-access is automatically skipped when tenant isolation is enabled
+      #     env: |
+      #       DD_SITE: us5.datadoghq.com
+      #       DD_SERVICE: demo-tenant-service
+      #       DD_ENV: staging
+      #       DD_VERSION: ${{ github.sha }}
+      #       SERVICE_PROVIDER_ID: inrush
+      #     permissions: |
+      #       s3: read
+      #       sqs: write
+
       # Optional: Output the created resources
       - name: Output Lambda info
         run: |

@@ -374,3 +374,95 @@ func handler(ctx context.Context, event interface{}) (interface{}, error) {
 - Verify `github.com/DataDog/datadog-lambda-go` is in your `go.mod`
 
 See the [examples directory](./examples/main.go) for a complete working example with Datadog integration.
+
+## Tenant Isolation Mode
+
+AWS Lambda's tenant isolation mode (released November 2025) provides compute-level isolation for multi-tenant SaaS applications. When enabled, each tenant's requests are processed in separate execution environments, ensuring complete isolation of tenant-specific data and code.
+
+### Quick Start
+
+To enable tenant isolation for your Lambda function:
+
+```yaml
+- uses: alonch/actions-aws-function-go@main
+  with:
+    name: my-multitenant-lambda
+    working-directory: .
+    entrypoint-file: main.go
+    tenant-isolation-mode: PER_TENANT
+```
+
+### What Gets Configured
+
+When `tenant-isolation-mode: PER_TENANT` is set:
+
+1. **Lambda function is created with tenant isolation** - Each tenant gets separate execution environments (memory, disk, vCPU never shared)
+2. **Function URL is automatically skipped** - Function URLs are not compatible with tenant isolation mode
+3. **Tenant ID must be provided** - Each invocation requires a `tenant-id` parameter via the `X-Amz-Tenant-Id` header
+
+### Client Requirements
+
+For tenant-isolated functions, clients must send the tenant identifier with each request:
+
+**Using API Gateway:**
+- Client sends `x-tenant-id` header
+- API Gateway maps it to `X-Amz-Tenant-Id` header for Lambda invocation
+- Configure API Gateway integration: `integration.request.header.X-Amz-Tenant-Id = method.request.header.x-tenant-id`
+
+**Using AWS CLI:**
+```bash
+aws lambda invoke \
+  --function-name my-function \
+  --tenant-id tenant123 \
+  response.json
+```
+
+### Accessing Tenant ID in Your Code
+
+In your Go Lambda handler, access the tenant ID from the Lambda context:
+
+```go
+import (
+    "context"
+    "github.com/aws/aws-lambda-go/lambdacontext"
+)
+
+func handler(ctx context.Context, event interface{}) (interface{}, error) {
+    // Access tenant ID from Lambda context (when PER_TENANT mode is enabled)
+    if lc, ok := lambdacontext.FromContext(ctx); ok {
+        // Note: Check aws-lambda-go SDK version for TenantId field support
+        // tenantID := lc.TenantId
+    }
+    // ... your handler logic
+}
+```
+
+### Limitations
+
+1. **Immutable Configuration** - Tenant isolation can only be enabled at function creation time. It cannot be added to existing functions.
+
+2. **Function URLs Not Supported** - Functions with tenant isolation cannot use Lambda Function URLs. The action automatically skips function URL creation when tenant isolation is enabled.
+
+3. **Higher Cold Starts** - Each tenant gets separate execution environments, which may increase cold start frequency compared to shared environments.
+
+4. **Concurrency Limits** - Lambda limits tenant-isolated execution environments to 2,500 per 1,000 concurrent executions configured for your function.
+
+5. **Client Responsibility** - Clients must send the `x-tenant-id` header. Invocations without this header will fail for tenant-isolated functions.
+
+### Compatibility
+
+| Scenario | tenant-isolation-mode | Client sends x-tenant-id | Result |
+|----------|----------------------|--------------------------|--------|
+| Existing projects | empty (default) | No | Works as before (JWT fallback) |
+| Existing projects | empty | Yes | Works (ignored) |
+| New tenant-isolated | PER_TENANT | Yes | Uses Lambda tenant context |
+| New tenant-isolated | PER_TENANT | No | Lambda invocation fails |
+
+### Best Practices
+
+- **Validate tenant ID** - Implement robust tenant ID validation in your application layer
+- **Monitor cold starts** - Be aware that tenant isolation increases cold start frequency
+- **Use API Gateway caching** - Cache authorizer responses to reduce Lambda invocations
+- **Consider provisioned concurrency** - For critical tenants, consider using provisioned concurrency (note: not compatible with tenant isolation)
+
+For more information, see the [AWS Lambda Tenant Isolation documentation](https://docs.aws.amazon.com/lambda/latest/dg/tenant-isolation.html).

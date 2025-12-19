@@ -164,3 +164,14 @@ variable "dsql_region" {
   type        = string
   default     = ""
 }
+
+variable "tenant_isolation_mode" {
+  description = "Tenant isolation mode (PER_TENANT or empty)"
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.tenant_isolation_mode == "" || var.tenant_isolation_mode == "PER_TENANT"
+    error_message = "tenant_isolation_mode must be empty or 'PER_TENANT'"
+  }
+}

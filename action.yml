@@ -88,6 +88,10 @@ inputs:
     description: 'DSQL region'
     required: false
     default: ''
+  tenant-isolation-mode:
+    description: 'Tenant isolation mode for multi-tenant SaaS (PER_TENANT or empty)'
+    required: false
+    default: ''
 
 outputs:
   arn:
@@ -217,6 +221,7 @@ runs:
         TF_VAR_dsql_cluster_endpoint: ${{ inputs.dsql-cluster-endpoint }}
         TF_VAR_dsql_cluster_arn: ${{ inputs.dsql-cluster-arn }}
         TF_VAR_dsql_region: ${{ inputs.dsql-region }}
+        TF_VAR_tenant_isolation_mode: ${{ inputs.tenant-isolation-mode }}
 
     - name: Terraform plan
       if: inputs.action == 'plan'
@@ -246,6 +251,7 @@ runs:
         TF_VAR_dsql_cluster_endpoint: ${{ inputs.dsql-cluster-endpoint }}
         TF_VAR_dsql_cluster_arn: ${{ inputs.dsql-cluster-arn }}
         TF_VAR_dsql_region: ${{ inputs.dsql-region }}
+        TF_VAR_tenant_isolation_mode: ${{ inputs.tenant-isolation-mode }}
 
     - name: Terraform destroy
       if: inputs.action == 'destroy'
@@ -272,6 +278,7 @@ runs:
         TF_VAR_efs_arn: ${{ steps.efs.outputs.efs_arn }}
         TF_VAR_dd_enabled: ${{ inputs.dd-tracing }}
         TF_VAR_dd_secret_arn: ${{ steps.datadog-secret.outputs.secret_arn }}
+        TF_VAR_tenant_isolation_mode: ${{ inputs.tenant-isolation-mode }}
 
     - name: Terraform apply
       id: terraform
@@ -326,3 +333,4 @@ runs:
         TF_VAR_dsql_cluster_endpoint: ${{ inputs.dsql-cluster-endpoint }}
         TF_VAR_dsql_cluster_arn: ${{ inputs.dsql-cluster-arn }}
         TF_VAR_dsql_region: ${{ inputs.dsql-region }}
+        TF_VAR_tenant_isolation_mode: ${{ inputs.tenant-isolation-mode }}
