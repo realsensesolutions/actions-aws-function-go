@@ -284,12 +284,16 @@ resource "aws_lambda_function" "function" {
   }
 
   # Tenant isolation for multi-tenant SaaS (only at creation time, immutable)
-  dynamic "tenancy_config" {
-    for_each = local.enable_tenant_isolation ? [1] : []
-    content {
-      tenant_isolation_mode = var.tenant_isolation_mode
-    }
-  }
+  # NOTE: This feature requires AWS Provider version that supports tenancy_config
+  # The current provider (v5.100.0) does not support this feature yet.
+  # When the provider supports it, uncomment the block below:
+  # dynamic "tenancy_config" {
+  #   for_each = local.enable_tenant_isolation ? [1] : []
+  #   content {
+  #     tenant_isolation_mode = var.tenant_isolation_mode
+  #   }
+  # }
+  # Validation is done in lifecycle block below
 
   # Increase timeout for functions with EFS to at least 10 seconds
   # as Lambda cold starts with EFS can take longer
@@ -297,6 +301,10 @@ resource "aws_lambda_function" "function" {
     precondition {
       condition     = !local.create_efs || var.timeout >= 10
       error_message = "When using EFS volumes, timeout must be at least 10 seconds to accommodate for potential cold starts."
+    }
+    precondition {
+      condition     = !local.enable_tenant_isolation
+      error_message = "Tenant isolation mode (PER_TENANT) is not yet supported by the Terraform AWS provider. The tenancy_config block requires a newer provider version that is not yet available. Please check https://registry.terraform.io/providers/hashicorp/aws for updates."
     }
   }
 }
