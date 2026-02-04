@@ -256,15 +256,13 @@ resource "aws_lambda_function" "function" {
     local.chrome_enabled ? [aws_lambda_layer_version.chrome[0].arn] : []
   )
 
-  depends_on = concat(
-    [
-      aws_iam_role_policy_attachment.lambda_basic,
-      aws_iam_role_policy_attachment.lambda_policies,
-      aws_iam_role_policy_attachment.lambda_vpc_access,
-      aws_iam_role_policy.lambda_datadog_secrets
-    ],
-    local.chrome_enabled ? [aws_lambda_layer_version.chrome[0]] : []
-  )
+  depends_on = [
+    aws_iam_role_policy_attachment.lambda_basic,
+    aws_iam_role_policy_attachment.lambda_policies,
+    aws_iam_role_policy_attachment.lambda_vpc_access,
+    aws_iam_role_policy.lambda_datadog_secrets,
+    aws_lambda_layer_version.chrome
+  ]
 
   environment {
     variables = local.env_vars
