@@ -56,7 +56,7 @@ jobs:
             cognito: write
             secretsmanager: read
 
-      # Deploy the Lambda function
+      # Deploy the Lambda function with Chrome layer
       - name: Deploy Lambda Web
         id: deploy
         uses: ./
@@ -64,11 +64,13 @@ jobs:
           name: demo
           working-directory: examples
           entrypoint-file: main.go
-          memory: 256
-          timeout: 15
+          memory: 1024  # Chrome requires at least 512MB, 1024MB+ recommended
+          timeout: 30
           allow-public-access: true
           dd-tracing: true
           dd-api-key: ${{ secrets.DATADOG_API_KEY }}
+          packages: |
+            chrome: 133
           env: |
             DD_SITE: us5.datadoghq.com
             DD_SERVICE: demo-service
@@ -103,23 +105,7 @@ jobs:
       #       s3: read
       #       sqs: write
       
-      # Test Chrome Layer
-      - name: Deploy Lambda with Chrome Layer
-        id: chrome-demo
-        uses: ./
-        with:
-          name: demo-chrome
-          working-directory: examples
-          entrypoint-file: main.go
-          memory: 1024  # Chrome requires at least 512MB, 1024MB+ recommended
-          timeout: 30
-          allow-public-access: true
-          packages: |
-            chrome: 133
-          permissions: |
-            s3: read
-
-      # Optional: Output the created resources
+      # Output the created resources
       - name: Output Lambda info
         run: |
           echo "Lambda ARN: ${{ steps.deploy.outputs.arn }}"
@@ -127,15 +113,13 @@ jobs:
           echo "Queue ARN: ${{ steps.worker.outputs.queue-arn }}"
           echo "Queue Name: ${{ steps.worker.outputs.queue-name }}"
           echo "Queue URL: ${{ steps.worker.outputs.queue-url }}"
-          echo "Chrome Demo ARN: ${{ steps.chrome-demo.outputs.arn }}"
-          echo "Chrome Demo URL: ${{ steps.chrome-demo.outputs.url }}"
         shell: bash
       
-      # Verify Chrome layer is attached
+      # Verify Chrome layer is attached to the web function
       - name: Verify Chrome Layer
         run: |
           echo "Verifying Chrome layer is attached to Lambda function..."
-          LAYERS=$(aws lambda get-function --function-name ${{ steps.chrome-demo.outputs.arn }} --query 'Configuration.Layers[*].Arn' --output text)
+          LAYERS=$(aws lambda get-function --function-name ${{ steps.deploy.outputs.arn }} --query 'Configuration.Layers[*].Arn' --output text)
           echo "Attached layers: $LAYERS"
           if [[ "$LAYERS" == *"chromium"* ]]; then
             echo "✅ Chrome layer is correctly attached!"
