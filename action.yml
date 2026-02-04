@@ -166,6 +166,42 @@ runs:
         fi
       shell: bash
 
+    # Download Chrome layer if packages includes chrome
+    - name: Download Chrome Layer
+      id: chrome-layer
+      if: contains(inputs.packages, 'chrome')
+      run: |
+        # Parse chrome version from packages YAML
+        CHROME_VERSION=$(echo "${{ inputs.packages }}" | grep -oP 'chrome:\s*\K[0-9]+' || echo "")
+        
+        if [ -n "$CHROME_VERSION" ]; then
+          echo "Downloading Chrome layer version $CHROME_VERSION..."
+          
+          # Determine architecture
+          if [[ "${{ inputs.arm }}" == "true" ]]; then
+            ARCH="arm64"
+          else
+            ARCH="x86_64"
+          fi
+          
+          # Download from chromium-for-lambda
+          DOWNLOAD_URL="https://github.com/chromium-for-lambda/chromium-binaries/releases/download/v${CHROME_VERSION}/chromium-v${CHROME_VERSION}-layer-al2023-${ARCH}.zip"
+          LAYER_FILE="${{ github.action_path }}/chromium-layer.zip"
+          
+          echo "Downloading from: $DOWNLOAD_URL"
+          curl -L -o "$LAYER_FILE" "$DOWNLOAD_URL"
+          
+          # Verify it's a valid zip
+          if unzip -t "$LAYER_FILE" > /dev/null 2>&1; then
+            echo "✅ Chrome layer downloaded and verified"
+            echo "layer_path=$LAYER_FILE" >> "$GITHUB_OUTPUT"
+          else
+            echo "❌ Downloaded file is not a valid zip"
+            exit 1
+          fi
+        fi
+      shell: bash
+
     # Setup Datadog secret in AWS Secrets Manager (if Datadog is enabled)
     - name: Setup Datadog Secret
       id: datadog-secret
@@ -227,6 +263,7 @@ runs:
         TF_VAR_dsql_region: ${{ inputs.dsql-region }}
         TF_VAR_tenant_isolation_mode: ${{ inputs.tenant-isolation-mode }}
         TF_VAR_packages: ${{ inputs.packages }}
+        TF_VAR_chrome_layer_path: ${{ steps.chrome-layer.outputs.layer_path }}
 
     - name: Terraform plan
       if: inputs.action == 'plan'
@@ -258,6 +295,7 @@ runs:
         TF_VAR_dsql_region: ${{ inputs.dsql-region }}
         TF_VAR_tenant_isolation_mode: ${{ inputs.tenant-isolation-mode }}
         TF_VAR_packages: ${{ inputs.packages }}
+        TF_VAR_chrome_layer_path: ${{ steps.chrome-layer.outputs.layer_path }}
 
     - name: Terraform destroy
       if: inputs.action == 'destroy'
@@ -286,6 +324,7 @@ runs:
         TF_VAR_dd_secret_arn: ${{ steps.datadog-secret.outputs.secret_arn }}
         TF_VAR_tenant_isolation_mode: ${{ inputs.tenant-isolation-mode }}
         TF_VAR_packages: ${{ inputs.packages }}
+        TF_VAR_chrome_layer_path: ${{ steps.chrome-layer.outputs.layer_path }}
 
     - name: Terraform apply
       id: terraform
@@ -342,3 +381,4 @@ runs:
         TF_VAR_dsql_region: ${{ inputs.dsql-region }}
         TF_VAR_tenant_isolation_mode: ${{ inputs.tenant-isolation-mode }}
         TF_VAR_packages: ${{ inputs.packages }}
+        TF_VAR_chrome_layer_path: ${{ steps.chrome-layer.outputs.layer_path }}

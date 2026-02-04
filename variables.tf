@@ -181,3 +181,9 @@ variable "packages" {
   type        = string
   default     = ""
 }
+
+variable "chrome_layer_path" {
+  description = "Path to the downloaded Chrome layer zip file"
+  type        = string
+  default     = ""
+}
