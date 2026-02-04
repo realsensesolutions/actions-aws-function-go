@@ -102,6 +102,24 @@ jobs:
       #     permissions: |
       #       s3: read
       #       sqs: write
+      
+      # Test Chrome Layer (uncomment to test)
+      # - name: Deploy Lambda with Chrome Layer
+      #   id: chrome-demo
+      #   uses: ./
+      #   with:
+      #     name: demo-chrome
+      #     working-directory: examples
+      #     entrypoint-file: main.go
+      #     memory: 1024  # Chrome requires at least 512MB, 1024MB+ recommended
+      #     timeout: 30
+      #     allow-public-access: true
+      #     packages: |
+      #       chrome: 133
+      #     env: |
+      #       CHROMIUM_PATH: /opt/chromium
+      #     permissions: |
+      #       s3: read
 
       # Optional: Output the created resources
       - name: Output Lambda info

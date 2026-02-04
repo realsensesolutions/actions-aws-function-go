@@ -5,9 +5,10 @@ locals {
   # Parse packages YAML
   packages_map = length(var.packages) > 0 ? yamldecode(var.packages) : {}
   
-  # Extract Chrome version
-  chrome_version = lookup(local.packages_map, "chrome", "")
-  chrome_enabled = length(local.chrome_version) > 0
+  # Extract Chrome version (convert to string since YAML may parse it as number)
+  chrome_version_raw = try(local.packages_map["chrome"], null)
+  chrome_version     = local.chrome_version_raw != null ? tostring(local.chrome_version_raw) : ""
+  chrome_enabled     = length(local.chrome_version) > 0
   
   # Chromium-for-lambda download URL pattern
   # ARM64 vs x86_64 based on var.arm
