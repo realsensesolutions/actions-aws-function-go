@@ -10,9 +10,11 @@ locals {
   chrome_version     = local.chrome_version_raw != null ? tostring(local.chrome_version_raw) : ""
   chrome_enabled     = length(local.chrome_version) > 0 && length(var.chrome_layer_path) > 0
   
-  # ARM64 vs x86_64 based on var.arm
-  chrome_arch = var.arm ? "arm64" : "x86_64"
-  chrome_os   = "al2023"  # Amazon Linux 2023 matches provided.al2023 runtime
+  # ARM64 vs x64 based on var.arm (matching Sparticuz/chromium naming)
+  chrome_arch = var.arm ? "arm64" : "x64"
+  
+  # For Lambda compatible_architectures, we need the AWS naming
+  chrome_arch_aws = var.arm ? "arm64" : "x86_64"
   
   # Chrome environment variables to inject when enabled
   chrome_env_vars = local.chrome_enabled ? {
@@ -69,7 +71,7 @@ resource "aws_lambda_layer_version" "chrome" {
   s3_bucket                = aws_s3_bucket.chrome_layer[0].id
   s3_key                   = aws_s3_object.chrome_layer[0].key
   compatible_runtimes      = ["provided.al2023"]
-  compatible_architectures = [local.chrome_arch]
+  compatible_architectures = [local.chrome_arch_aws]
   
   depends_on = [
     aws_s3_object.chrome_layer

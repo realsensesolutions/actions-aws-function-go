@@ -171,25 +171,30 @@ runs:
       id: chrome-layer
       if: contains(inputs.packages, 'chrome')
       run: |
-        # Parse chrome version from packages YAML
-        CHROME_VERSION=$(echo "${{ inputs.packages }}" | grep -oP 'chrome:\s*\K[0-9]+' || echo "")
+        # Parse chrome version from packages YAML (supports "133" or "133.0.0" format)
+        CHROME_VERSION=$(echo "${{ inputs.packages }}" | grep -oP 'chrome:\s*\K[0-9.]+' || echo "")
         
         if [ -n "$CHROME_VERSION" ]; then
+          # If version is just a major number (e.g., "133"), convert to "133.0.0"
+          if [[ "$CHROME_VERSION" =~ ^[0-9]+$ ]]; then
+            CHROME_VERSION="${CHROME_VERSION}.0.0"
+          fi
+          
           echo "Downloading Chrome layer version $CHROME_VERSION..."
           
-          # Determine architecture
+          # Determine architecture (Sparticuz/chromium uses arm64 or x64)
           if [[ "${{ inputs.arm }}" == "true" ]]; then
             ARCH="arm64"
           else
-            ARCH="x86_64"
+            ARCH="x64"
           fi
           
-          # Download from chromium-for-lambda
-          DOWNLOAD_URL="https://github.com/chromium-for-lambda/chromium-binaries/releases/download/v${CHROME_VERSION}/chromium-v${CHROME_VERSION}-layer-al2023-${ARCH}.zip"
+          # Download from Sparticuz/chromium releases
+          DOWNLOAD_URL="https://github.com/Sparticuz/chromium/releases/download/v${CHROME_VERSION}/chromium-v${CHROME_VERSION}-layer.${ARCH}.zip"
           LAYER_FILE="${{ github.action_path }}/chromium-layer.zip"
           
           echo "Downloading from: $DOWNLOAD_URL"
-          curl -L -o "$LAYER_FILE" "$DOWNLOAD_URL"
+          curl -L -f -o "$LAYER_FILE" "$DOWNLOAD_URL"
           
           # Verify it's a valid zip
           if unzip -t "$LAYER_FILE" > /dev/null 2>&1; then
@@ -197,6 +202,7 @@ runs:
             echo "layer_path=$LAYER_FILE" >> "$GITHUB_OUTPUT"
           else
             echo "❌ Downloaded file is not a valid zip"
+            cat "$LAYER_FILE" 2>/dev/null || true
             exit 1
           fi
         fi
