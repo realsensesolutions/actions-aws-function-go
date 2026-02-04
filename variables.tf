@@ -175,3 +175,9 @@ variable "tenant_isolation_mode" {
     error_message = "tenant_isolation_mode must be empty or 'PER_TENANT'"
   }
 }
+
+variable "packages" {
+  description = "External packages to include as Lambda layers (YAML format)"
+  type        = string
+  default     = ""
+}

@@ -55,10 +55,11 @@ locals {
   )
 
   # Add EventBridge Scheduler role ARN to environment variables
-  # Merge with Datadog environment variables if enabled
-  # Note: merge order ensures user values (env_vars_base) override defaults (dd_env_vars)
+  # Merge with Datadog and Chrome environment variables if enabled
+  # Note: merge order ensures user values (env_vars_base) override defaults (dd_env_vars, chrome_env_vars)
   env_vars = merge(
     local.dd_env_vars,
+    local.chrome_env_vars,
     {
       EVENTBRIDGE_SCHEDULER_ROLE_ARN = local.eventbridge_role_arn
     },
@@ -249,15 +250,21 @@ resource "aws_lambda_function" "function" {
   timeout          = var.timeout
   architectures    = local.lambda_architecture
 
-  # Add Datadog Extension layer if enabled
-  layers = var.dd_enabled && length(local.dd_layer_arn) > 0 ? [local.dd_layer_arn] : []
+  # Add Datadog Extension layer and Chrome layer if enabled
+  layers = concat(
+    var.dd_enabled && length(local.dd_layer_arn) > 0 ? [local.dd_layer_arn] : [],
+    local.chrome_enabled ? [aws_lambda_layer_version.chrome[0].arn] : []
+  )
 
-  depends_on = [
-    aws_iam_role_policy_attachment.lambda_basic,
-    aws_iam_role_policy_attachment.lambda_policies,
-    aws_iam_role_policy_attachment.lambda_vpc_access,
-    aws_iam_role_policy.lambda_datadog_secrets
-  ]
+  depends_on = concat(
+    [
+      aws_iam_role_policy_attachment.lambda_basic,
+      aws_iam_role_policy_attachment.lambda_policies,
+      aws_iam_role_policy_attachment.lambda_vpc_access,
+      aws_iam_role_policy.lambda_datadog_secrets
+    ],
+    local.chrome_enabled ? [aws_lambda_layer_version.chrome[0]] : []
+  )
 
   environment {
     variables = local.env_vars
