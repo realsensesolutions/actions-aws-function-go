@@ -51,7 +51,7 @@ resource "aws_s3_object" "chrome_layer" {
   count = local.chrome_enabled ? 1 : 0
   
   bucket = aws_s3_bucket.chrome_layer[0].id
-  key    = "chromium-v${local.chrome_version}-layer-${local.chrome_os}-${local.chrome_arch}.zip"
+  key    = "chromium-v${local.chrome_version}-layer.${local.chrome_arch}.zip"
   source = var.chrome_layer_path
   etag   = filemd5(var.chrome_layer_path)
   
@@ -59,7 +59,6 @@ resource "aws_s3_object" "chrome_layer" {
     Name         = "chromium-v${local.chrome_version}"
     Version      = local.chrome_version
     Architecture = local.chrome_arch
-    OS           = local.chrome_os
   }
 }
 
