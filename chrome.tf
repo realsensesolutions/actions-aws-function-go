@@ -62,27 +62,16 @@ resource "aws_s3_bucket_versioning" "chrome_layer" {
   }
 }
 
-# Write downloaded chromium layer to temporary file
-resource "local_file" "chrome_layer" {
-  count = local.chrome_enabled ? 1 : 0
-  
-  filename = "${path.module}/chromium-v${local.chrome_version}-layer-${local.chrome_os}-${local.chrome_arch}.zip"
-  content  = data.http.chrome_layer[0].response_body
-  
-  depends_on = [
-    data.http.chrome_layer
-  ]
-}
-
-# Upload chromium layer zip to S3
+# Upload chromium layer zip directly to S3 from HTTP response
 resource "aws_s3_object" "chrome_layer" {
   count = local.chrome_enabled ? 1 : 0
   
-  bucket = aws_s3_bucket.chrome_layer[0].id
-  key    = "chromium-v${local.chrome_version}-layer-${local.chrome_os}-${local.chrome_arch}.zip"
-  source = local_file.chrome_layer[0].filename
+  bucket       = aws_s3_bucket.chrome_layer[0].id
+  key          = "chromium-v${local.chrome_version}-layer-${local.chrome_os}-${local.chrome_arch}.zip"
+  content_base64 = data.http.chrome_layer[0].response_body_base64
   
-  etag = filemd5(local_file.chrome_layer[0].filename)
+  # Use md5 of the base64 content for change detection
+  etag = md5(data.http.chrome_layer[0].response_body_base64)
   
   tags = {
     Name        = "chromium-v${local.chrome_version}"
@@ -90,10 +79,6 @@ resource "aws_s3_object" "chrome_layer" {
     Architecture = local.chrome_arch
     OS          = local.chrome_os
   }
-  
-  depends_on = [
-    local_file.chrome_layer
-  ]
 }
 
 # Create Lambda layer from S3

@@ -103,23 +103,21 @@ jobs:
       #       s3: read
       #       sqs: write
       
-      # Test Chrome Layer (uncomment to test)
-      # - name: Deploy Lambda with Chrome Layer
-      #   id: chrome-demo
-      #   uses: ./
-      #   with:
-      #     name: demo-chrome
-      #     working-directory: examples
-      #     entrypoint-file: main.go
-      #     memory: 1024  # Chrome requires at least 512MB, 1024MB+ recommended
-      #     timeout: 30
-      #     allow-public-access: true
-      #     packages: |
-      #       chrome: 133
-      #     env: |
-      #       CHROMIUM_PATH: /opt/chromium
-      #     permissions: |
-      #       s3: read
+      # Test Chrome Layer
+      - name: Deploy Lambda with Chrome Layer
+        id: chrome-demo
+        uses: ./
+        with:
+          name: demo-chrome
+          working-directory: examples
+          entrypoint-file: main.go
+          memory: 1024  # Chrome requires at least 512MB, 1024MB+ recommended
+          timeout: 30
+          allow-public-access: true
+          packages: |
+            chrome: 133
+          permissions: |
+            s3: read
 
       # Optional: Output the created resources
       - name: Output Lambda info
@@ -129,4 +127,20 @@ jobs:
           echo "Queue ARN: ${{ steps.worker.outputs.queue-arn }}"
           echo "Queue Name: ${{ steps.worker.outputs.queue-name }}"
           echo "Queue URL: ${{ steps.worker.outputs.queue-url }}"
+          echo "Chrome Demo ARN: ${{ steps.chrome-demo.outputs.arn }}"
+          echo "Chrome Demo URL: ${{ steps.chrome-demo.outputs.url }}"
+        shell: bash
+      
+      # Verify Chrome layer is attached
+      - name: Verify Chrome Layer
+        run: |
+          echo "Verifying Chrome layer is attached to Lambda function..."
+          LAYERS=$(aws lambda get-function --function-name ${{ steps.chrome-demo.outputs.arn }} --query 'Configuration.Layers[*].Arn' --output text)
+          echo "Attached layers: $LAYERS"
+          if [[ "$LAYERS" == *"chromium"* ]]; then
+            echo "✅ Chrome layer is correctly attached!"
+          else
+            echo "❌ Chrome layer not found in Lambda configuration"
+            exit 1
+          fi
         shell: bash
