@@ -70,7 +70,7 @@ jobs:
           dd-tracing: true
           dd-api-key: ${{ secrets.DATADOG_API_KEY }}
           packages: |
-            chrome: 133
+            chrome: 143
           env: |
             DD_SITE: us5.datadoghq.com
             DD_SERVICE: demo-service
