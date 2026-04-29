@@ -239,6 +239,7 @@ runs:
       run: |
         terraform init -reconfigure \
           -backend-config="bucket=$TF_BACKEND_s3" \
+          -backend-config="use_lockfile=true" \
           -backend-config="dynamodb_table=$TF_BACKEND_dynamodb" \
           -backend-config="key=$TF_BACKEND_key"
       shell: bash
