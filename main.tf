@@ -145,8 +145,8 @@ locals {
       write = ["arn:aws:iam::aws:policy/AmazonAPIGatewayAdministrator"]
     }
     lambda = {
-      read  = ["arn:aws:iam::aws:policy/AWSLambdaReadOnlyAccess"]
-      write = ["arn:aws:iam::aws:policy/AWSLambdaFullAccess"]
+      read  = ["arn:aws:iam::aws:policy/AWSLambda_ReadOnlyAccess"]
+      write = ["arn:aws:iam::aws:policy/AWSLambda_FullAccess"]
     }
     iot = {
       read  = ["arn:aws:iam::aws:policy/AWSIoTDataAccess"]
